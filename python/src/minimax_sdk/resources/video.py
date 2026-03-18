@@ -138,16 +138,16 @@ class Video(SyncResource):
         )
 
         # 3. Retrieve the file to obtain a download URL.
-        file_id: str = poll_resp["file_id"]
+        file_id: str = str(poll_resp.get("file_id", ""))
         file_info = self._client.files.retrieve(file_id)
 
         return VideoResult(
             task_id=task_id,
-            status=poll_resp["status"],
+            status=poll_resp.get("status", "Success"),
             file_id=file_id,
             download_url=file_info.download_url,
-            video_width=poll_resp["video_width"],
-            video_height=poll_resp["video_height"],
+            video_width=poll_resp.get("video_width", 0),
+            video_height=poll_resp.get("video_height", 0),
         )
 
     # ── High-level ───────────────────────────────────────────────────────
@@ -434,16 +434,16 @@ class AsyncVideo(AsyncResource):
         )
 
         # 3. Retrieve the file to obtain a download URL.
-        file_id: str = poll_resp["file_id"]
+        file_id: str = str(poll_resp.get("file_id", ""))
         file_info = await self._client.files.retrieve(file_id)
 
         return VideoResult(
             task_id=task_id,
-            status=poll_resp["status"],
+            status=poll_resp.get("status", "Success"),
             file_id=file_id,
             download_url=file_info.download_url,
-            video_width=poll_resp["video_width"],
-            video_height=poll_resp["video_height"],
+            video_width=poll_resp.get("video_width", 0),
+            video_height=poll_resp.get("video_height", 0),
         )
 
     # ── High-level ───────────────────────────────────────────────────────
