@@ -87,13 +87,10 @@ def _parse_design_result(resp: dict[str, Any]) -> VoiceDesignResult:
     trial_audio: AudioResponse | None = None
     if raw_trial:
         if isinstance(raw_trial, str):
-            # API returns trial_audio as a hex-encoded string
+            # API returns trial_audio as a hex-encoded string (no metadata)
             audio_bytes = decode_hex_audio(raw_trial)
             trial_audio = AudioResponse(
                 data=audio_bytes,
-                duration=0,
-                sample_rate=0,
-                format="mp3",
                 size=len(audio_bytes),
             )
         else:

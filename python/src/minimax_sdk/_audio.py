@@ -53,10 +53,10 @@ class AudioResponse(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     data: bytes
-    duration: float
-    sample_rate: int
-    format: str
-    size: int
+    duration: float = 0
+    sample_rate: int = 0
+    format: str = "mp3"
+    size: int = 0
 
     def save(self, path: str | Path) -> None:
         """Write the audio data to a file on disk.
