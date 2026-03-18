@@ -134,7 +134,7 @@ async def async_poll_task(
     MiniMaxError:
         If the task reaches ``Fail`` status.
     """
-    deadline = asyncio.get_event_loop().time() + poll_timeout
+    deadline = asyncio.get_running_loop().time() + poll_timeout
 
     while True:
         body = await http_client.request(
@@ -158,7 +158,7 @@ async def async_poll_task(
         if status not in _PENDING_STATUSES:
             pass
 
-        if asyncio.get_event_loop().time() + poll_interval > deadline:
+        if asyncio.get_running_loop().time() + poll_interval > deadline:
             raise PollTimeoutError(
                 f"Task {task_id} did not complete within {poll_timeout}s",
                 code=0,

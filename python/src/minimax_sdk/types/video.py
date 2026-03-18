@@ -54,6 +54,6 @@ class VideoResult(BaseModel):
     task_id: str
     status: str
     file_id: str
-    download_url: str
+    download_url: Optional[str] = None
     video_width: int
     video_height: int

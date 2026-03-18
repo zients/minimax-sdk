@@ -85,7 +85,7 @@ class InvalidParameterError(MiniMaxError):
 # ── Timeouts ──────────────────────────────────────────────────────────────────
 
 
-class TimeoutError(MiniMaxError):
+class APITimeoutError(MiniMaxError):
     """Request timed out on the server side (code 1001)."""
 
 
@@ -123,7 +123,7 @@ class ServerError(MiniMaxError):
 
 ERROR_CODE_MAP: dict[int, type[MiniMaxError]] = {
     1000: ServerError,
-    1001: TimeoutError,
+    1001: APITimeoutError,
     1002: RateLimitError,
     1004: AuthError,
     1008: InsufficientBalanceError,

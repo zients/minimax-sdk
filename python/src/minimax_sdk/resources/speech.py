@@ -942,7 +942,7 @@ class Speech(SyncResource):
             If the server rejects the ``task_start`` request.
         """
         url = _ws_url(self._http.base_url)
-        headers = {"Authorization": f"Bearer {self._http.api_key}"}
+        headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
         try:
             ws = websockets.sync.client.connect(url, additional_headers=headers)
@@ -953,7 +953,7 @@ class Speech(SyncResource):
 
         return SpeechConnection(
             ws,
-            self._http.api_key,
+            self._http._api_key,
             model,
             voice_setting,
             audio_setting=audio_setting,
@@ -1114,8 +1114,8 @@ class Speech(SyncResource):
         task_id = create_resp.get("task_id", "")
 
         # Step 2: Poll until done
-        interval = poll_interval if poll_interval is not None else self._poll_interval
-        timeout = poll_timeout if poll_timeout is not None else self._poll_timeout
+        interval = poll_interval if poll_interval is not None else self._client.poll_interval
+        timeout = poll_timeout if poll_timeout is not None else self._client.poll_timeout
 
         poll_result = poll_task(
             self._http,
@@ -1127,7 +1127,7 @@ class Speech(SyncResource):
 
         # Step 3: Retrieve file info for the download URL
         file_id = poll_result.get("file_id", "")
-        file_info = self._files.retrieve(file_id)
+        file_info = self._client.files.retrieve(file_id)
 
         return TaskResult(
             task_id=task_id,
@@ -1333,7 +1333,7 @@ class AsyncSpeech(AsyncResource):
             If the server rejects the ``task_start`` request.
         """
         url = _ws_url(self._http.base_url)
-        headers = {"Authorization": f"Bearer {self._http.api_key}"}
+        headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
         try:
             ws = await websockets.asyncio.client.connect(url, additional_headers=headers)
@@ -1344,7 +1344,7 @@ class AsyncSpeech(AsyncResource):
 
         conn = AsyncSpeechConnection(
             ws,
-            self._http.api_key,
+            self._http._api_key,
             model,
             voice_setting,
             audio_setting=audio_setting,
@@ -1506,8 +1506,8 @@ class AsyncSpeech(AsyncResource):
         task_id = create_resp.get("task_id", "")
 
         # Step 2: Poll until done
-        interval = poll_interval if poll_interval is not None else self._poll_interval
-        timeout = poll_timeout if poll_timeout is not None else self._poll_timeout
+        interval = poll_interval if poll_interval is not None else self._client.poll_interval
+        timeout = poll_timeout if poll_timeout is not None else self._client.poll_timeout
 
         poll_result = await async_poll_task(
             self._http,
@@ -1519,7 +1519,7 @@ class AsyncSpeech(AsyncResource):
 
         # Step 3: Retrieve file info for the download URL
         file_id = poll_result.get("file_id", "")
-        file_info = await self._files.retrieve(file_id)
+        file_info = await self._client.files.retrieve(file_id)
 
         return TaskResult(
             task_id=task_id,

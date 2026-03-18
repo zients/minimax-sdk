@@ -24,10 +24,9 @@ def _make_video_resource() -> tuple[Video, MagicMock, MagicMock]:
     """
     mock_http = MagicMock()
     mock_client = MagicMock()
+    mock_client.poll_interval = 5.0
+    mock_client.poll_timeout = 600.0
     video = Video(mock_http, client=mock_client)
-    # The _generate method needs _poll_interval and _poll_timeout attributes
-    video._poll_interval = 5.0
-    video._poll_timeout = 600.0
     return video, mock_http, mock_client
 
 
@@ -356,11 +355,11 @@ def _make_async_video_resource() -> tuple[AsyncVideo, AsyncMock, MagicMock]:
     """Create an AsyncVideo resource with mocked AsyncHttpClient and client."""
     mock_http = AsyncMock()
     mock_client = MagicMock()
+    mock_client.poll_interval = 5.0
+    mock_client.poll_timeout = 600.0
     mock_client.files = MagicMock()
     mock_client.files.retrieve = AsyncMock()
     video = AsyncVideo(mock_http, client=mock_client)
-    video._poll_interval = 5.0
-    video._poll_timeout = 600.0
     return video, mock_http, mock_client
 
 

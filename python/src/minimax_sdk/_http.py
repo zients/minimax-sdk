@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import time
 from pathlib import Path
+from collections.abc import AsyncIterator, Iterator
 from typing import Any, BinaryIO
 
 import httpx
@@ -18,6 +19,8 @@ from minimax_sdk.exceptions import (
     RETRYABLE_CODES,
     MiniMaxError,
 )
+
+_SDK_VERSION = "0.1.0"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -76,7 +79,7 @@ class HttpClient:
         timeout: httpx.Timeout | None = None,
         max_retries: int = 2,
     ) -> None:
-        self.api_key = api_key
+        self._api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.max_retries = max_retries
 
@@ -91,7 +94,10 @@ class HttpClient:
         self._client = httpx.Client(
             base_url=self.base_url,
             timeout=timeout,
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": f"minimax-sdk-python/{_SDK_VERSION}",
+            },
         )
 
     # ── Core request ──────────────────────────────────────────────────────
@@ -171,6 +177,23 @@ class HttpClient:
         response.raise_for_status()
         return response.content
 
+    # ── Stream request ────────────────────────────────────────────────────
+
+    def stream_request(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        """Send an HTTP request and yield response lines as they arrive.
+
+        Uses the httpx ``stream()`` context manager for true streaming.
+        Each yielded value is a text line from the response body.
+        """
+        with self._client.stream(method, path, **kwargs) as response:
+            response.raise_for_status()
+            yield from response.iter_lines()
+
     # ── Upload ────────────────────────────────────────────────────────────
 
     def upload(
@@ -238,7 +261,7 @@ class AsyncHttpClient:
         timeout: httpx.Timeout | None = None,
         max_retries: int = 2,
     ) -> None:
-        self.api_key = api_key
+        self._api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.max_retries = max_retries
 
@@ -253,7 +276,10 @@ class AsyncHttpClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=timeout,
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": f"minimax-sdk-python/{_SDK_VERSION}",
+            },
         )
 
     # ── Core request ──────────────────────────────────────────────────────
@@ -318,6 +344,24 @@ class AsyncHttpClient:
         response = await self._client.request(method, path, **kwargs)
         response.raise_for_status()
         return response.content
+
+    # ── Stream request ────────────────────────────────────────────────────
+
+    async def stream_request(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        """Send an async HTTP request and yield response lines as they arrive.
+
+        Uses the httpx ``stream()`` async context manager for true streaming.
+        Each yielded value is a text line from the response body.
+        """
+        async with self._client.stream(method, path, **kwargs) as response:
+            response.raise_for_status()
+            async for line in response.aiter_lines():
+                yield line
 
     # ── Upload ────────────────────────────────────────────────────────────
 

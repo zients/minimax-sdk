@@ -223,7 +223,7 @@ class Music(SyncResource):
         )
 
         # Use the underlying httpx client directly for streaming.
-        with self._client._client.stream(
+        with self._http._client.stream(
             "POST",
             "/v1/music_generation",
             json=body,
@@ -355,7 +355,7 @@ class AsyncMusic(AsyncResource):
         )
 
         # Use the underlying httpx async client directly for streaming.
-        async with self._client._client.stream(
+        async with self._http._client.stream(
             "POST",
             "/v1/music_generation",
             json=body,

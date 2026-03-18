@@ -126,11 +126,13 @@ class Video(SyncResource):
         task_id: str = create_resp["task_id"]
 
         # 2. Poll until the task reaches a terminal state.
-        interval = poll_interval if poll_interval is not None else self._poll_interval
-        timeout = poll_timeout if poll_timeout is not None else self._poll_timeout
+        interval = poll_interval if poll_interval is not None else self._client.poll_interval
+        timeout = poll_timeout if poll_timeout is not None else self._client.poll_timeout
 
         poll_resp = poll_task(
-            query_fn=lambda: self.query(task_id),
+            self._http,
+            _QUERY_PATH,
+            task_id,
             poll_interval=interval,
             poll_timeout=timeout,
         )
@@ -420,11 +422,13 @@ class AsyncVideo(AsyncResource):
         task_id: str = create_resp["task_id"]
 
         # 2. Poll until the task reaches a terminal state.
-        interval = poll_interval if poll_interval is not None else self._poll_interval
-        timeout = poll_timeout if poll_timeout is not None else self._poll_timeout
+        interval = poll_interval if poll_interval is not None else self._client.poll_interval
+        timeout = poll_timeout if poll_timeout is not None else self._client.poll_timeout
 
         poll_resp = await async_poll_task(
-            query_fn=lambda: self.query(task_id),
+            self._http,
+            _QUERY_PATH,
+            task_id,
             poll_interval=interval,
             poll_timeout=timeout,
         )

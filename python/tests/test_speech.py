@@ -48,26 +48,26 @@ _SAMPLE_BYTES = bytes.fromhex(_SAMPLE_HEX)
 def _make_speech_resource() -> tuple[Speech, MagicMock]:
     """Create a Speech resource with a mocked HttpClient."""
     mock_http = MagicMock()
-    mock_http.api_key = "test-key"
+    mock_http._api_key = "test-key"
     mock_http.base_url = "https://api.minimax.io"
     mock_client = MagicMock()
+    mock_client.poll_interval = 5.0
+    mock_client.poll_timeout = 600.0
+    mock_client.files = MagicMock()
     speech = Speech(mock_http, client=mock_client)
-    speech._poll_interval = 5.0
-    speech._poll_timeout = 600.0
-    speech._files = MagicMock()
     return speech, mock_http
 
 
 def _make_async_speech_resource() -> tuple[AsyncSpeech, AsyncMock]:
     """Create an AsyncSpeech resource with a mocked AsyncHttpClient."""
     mock_http = AsyncMock()
-    mock_http.api_key = "test-key"
+    mock_http._api_key = "test-key"
     mock_http.base_url = "https://api.minimax.io"
     mock_client = AsyncMock()
+    mock_client.poll_interval = 5.0
+    mock_client.poll_timeout = 600.0
+    mock_client.files = AsyncMock()
     speech = AsyncSpeech(mock_http, client=mock_client)
-    speech._poll_interval = 5.0
-    speech._poll_timeout = 600.0
-    speech._files = AsyncMock()
     return speech, mock_http
 
 
@@ -607,7 +607,7 @@ class TestSpeechAsyncGenerate:
         # Step 3: files.retrieve returns FileInfo
         mock_file_info = MagicMock()
         mock_file_info.download_url = "https://cdn.minimax.io/audio.mp3"
-        speech._files.retrieve.return_value = mock_file_info
+        speech._client.files.retrieve.return_value = mock_file_info
 
         result = speech.async_generate(
             text="Long text",
@@ -621,19 +621,19 @@ class TestSpeechAsyncGenerate:
         assert result.status == "Success"
         assert result.file_id == "file-789"
         assert result.download_url == "https://cdn.minimax.io/audio.mp3"
-        speech._files.retrieve.assert_called_once_with("file-789")
+        speech._client.files.retrieve.assert_called_once_with("file-789")
 
     @patch("minimax_sdk.resources.speech.poll_task")
     def test_async_generate_uses_default_poll_settings(self, mock_poll):
         speech, mock_http = _make_speech_resource()
-        speech._poll_interval = 10.0
-        speech._poll_timeout = 300.0
+        speech._client.poll_interval = 10.0
+        speech._client.poll_timeout = 300.0
 
         mock_http.request.return_value = _ok_resp({"task_id": "t1"})
         mock_poll.return_value = _ok_resp({"status": "Success", "file_id": "f1"})
         mock_file_info = MagicMock()
         mock_file_info.download_url = "https://example.com/a.mp3"
-        speech._files.retrieve.return_value = mock_file_info
+        speech._client.files.retrieve.return_value = mock_file_info
 
         speech.async_generate(text="hello", voice_setting={"voice_id": "v1"})
 
@@ -1107,7 +1107,7 @@ class TestAsyncSpeechAsyncGenerate:
         # files.retrieve
         mock_file_info = MagicMock()
         mock_file_info.download_url = "https://cdn.minimax.io/audio.mp3"
-        speech._files.retrieve.return_value = mock_file_info
+        speech._client.files.retrieve.return_value = mock_file_info
 
         result = await speech.async_generate(
             text="Long text",
@@ -1125,14 +1125,14 @@ class TestAsyncSpeechAsyncGenerate:
     @patch("minimax_sdk.resources.speech.async_poll_task")
     async def test_async_generate_uses_default_poll_settings(self, mock_poll):
         speech, mock_http = _make_async_speech_resource()
-        speech._poll_interval = 10.0
-        speech._poll_timeout = 300.0
+        speech._client.poll_interval = 10.0
+        speech._client.poll_timeout = 300.0
 
         mock_http.request.return_value = _ok_resp({"task_id": "t1"})
         mock_poll.return_value = _ok_resp({"status": "Success", "file_id": "f1"})
         mock_file_info = MagicMock()
         mock_file_info.download_url = "https://example.com/a.mp3"
-        speech._files.retrieve.return_value = mock_file_info
+        speech._client.files.retrieve.return_value = mock_file_info
 
         await speech.async_generate(text="hello", voice_setting={"voice_id": "v1"})
 

@@ -268,7 +268,7 @@ class TestAsyncPollTaskSuccess:
         mock_loop = MagicMock()
         mock_loop.time.side_effect = [1000000.0, 1000000.0]  # large values
 
-        with patch("minimax_sdk._polling.asyncio.get_event_loop", return_value=mock_loop):
+        with patch("minimax_sdk._polling.asyncio.get_running_loop", return_value=mock_loop):
             result = await async_poll_task(
                 client,
                 "/v1/query/video_generation",
@@ -296,7 +296,7 @@ class TestAsyncPollTaskFailure:
         mock_loop = MagicMock()
         mock_loop.time.return_value = 0.0
 
-        with patch("minimax_sdk._polling.asyncio.get_event_loop", return_value=mock_loop):
+        with patch("minimax_sdk._polling.asyncio.get_running_loop", return_value=mock_loop):
             with pytest.raises(MiniMaxError) as exc_info:
                 await async_poll_task(
                     client,
@@ -330,7 +330,7 @@ class TestAsyncPollTaskTimeout:
         mock_loop = MagicMock()
         mock_loop.time.side_effect = [0.0, 6.0]
 
-        with patch("minimax_sdk._polling.asyncio.get_event_loop", return_value=mock_loop):
+        with patch("minimax_sdk._polling.asyncio.get_running_loop", return_value=mock_loop):
             with pytest.raises(PollTimeoutError) as exc_info:
                 await async_poll_task(
                     client,
@@ -376,7 +376,7 @@ class TestAsyncPollTaskStatusProgression:
         mock_loop = MagicMock()
         mock_loop.time.side_effect = [0.0, 0.0, 0.0, 0.0]  # never exceeds deadline
 
-        with patch("minimax_sdk._polling.asyncio.get_event_loop", return_value=mock_loop):
+        with patch("minimax_sdk._polling.asyncio.get_running_loop", return_value=mock_loop):
             result = await async_poll_task(
                 client,
                 "/v1/query/video_generation",
@@ -411,7 +411,7 @@ class TestAsyncPollTaskUnknownStatus:
         mock_loop = MagicMock()
         mock_loop.time.side_effect = [0.0, 0.0]
 
-        with patch("minimax_sdk._polling.asyncio.get_event_loop", return_value=mock_loop):
+        with patch("minimax_sdk._polling.asyncio.get_running_loop", return_value=mock_loop):
             result = await async_poll_task(
                 client,
                 "/v1/query/video_generation",

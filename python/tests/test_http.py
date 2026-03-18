@@ -123,7 +123,7 @@ class TestRetryAfterSeconds:
 class TestHttpClientConstructor:
     def test_sets_attributes(self) -> None:
         client = HttpClient(api_key="sk-key", base_url="https://example.com/", max_retries=5)
-        assert client.api_key == "sk-key"
+        assert client._api_key == "sk-key"
         assert client.base_url == "https://example.com"  # trailing slash stripped
         assert client.max_retries == 5
         client.close()
@@ -438,7 +438,7 @@ class TestHttpClientContextManager:
     def test_with_statement(self) -> None:
         with HttpClient(api_key="sk-key") as client:
             assert isinstance(client, HttpClient)
-            assert client.api_key == "sk-key"
+            assert client._api_key == "sk-key"
 
 
 # ── AsyncHttpClient constructor ──────────────────────────────────────────────
@@ -447,7 +447,7 @@ class TestHttpClientContextManager:
 class TestAsyncHttpClientConstructor:
     def test_sets_attributes(self) -> None:
         client = AsyncHttpClient(api_key="sk-async", base_url="https://async.io/", max_retries=3)
-        assert client.api_key == "sk-async"
+        assert client._api_key == "sk-async"
         assert client.base_url == "https://async.io"
         assert client.max_retries == 3
 
@@ -721,7 +721,7 @@ class TestAsyncHttpClientContextManager:
     async def test_async_with_statement(self) -> None:
         async with AsyncHttpClient(api_key="sk-key") as client:
             assert isinstance(client, AsyncHttpClient)
-            assert client.api_key == "sk-key"
+            assert client._api_key == "sk-key"
 
 
 # ── Edge cases: unreachable fallback paths ────────────────────────────────────

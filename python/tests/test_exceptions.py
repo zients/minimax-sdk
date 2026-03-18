@@ -17,7 +17,7 @@ from minimax_sdk.exceptions import (
     PollTimeoutError,
     RateLimitError,
     ServerError,
-    TimeoutError,
+    APITimeoutError,
     VoiceCloneError,
     VoiceDuplicateError,
     VoiceError,
@@ -36,7 +36,7 @@ class TestErrorCodeMap:
 
     EXPECTED_MAPPING: dict[int, type[MiniMaxError]] = {
         1000: ServerError,
-        1001: TimeoutError,
+        1001: APITimeoutError,
         1002: RateLimitError,
         1004: AuthError,
         1008: InsufficientBalanceError,

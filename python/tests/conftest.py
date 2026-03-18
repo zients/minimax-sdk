@@ -14,7 +14,7 @@ from minimax_sdk.client import MiniMax
 def mock_http_client() -> MagicMock:
     """A mocked synchronous HttpClient."""
     client = MagicMock(spec=HttpClient)
-    client.api_key = "test-key"
+    client._api_key = "test-key"
     client.base_url = "https://api.minimax.io"
     client.max_retries = 2
     return client
@@ -24,7 +24,7 @@ def mock_http_client() -> MagicMock:
 def mock_async_http_client() -> AsyncMock:
     """A mocked asynchronous AsyncHttpClient."""
     client = AsyncMock(spec=AsyncHttpClient)
-    client.api_key = "test-key"
+    client._api_key = "test-key"
     client.base_url = "https://api.minimax.io"
     client.max_retries = 2
     return client

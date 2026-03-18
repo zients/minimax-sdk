@@ -270,7 +270,7 @@ class TestMusicGenerateStream:
         def mock_stream(*args, **kwargs):
             yield mock_response
 
-        mock_client._client.stream = mock_stream
+        mock_http._client.stream = mock_stream
 
         chunks = list(music.generate_stream(
             model="music-2.5+",
@@ -303,7 +303,7 @@ class TestMusicGenerateStream:
         def mock_stream(*args, **kwargs):
             yield mock_response
 
-        mock_client._client.stream = mock_stream
+        mock_http._client.stream = mock_stream
 
         chunks = list(music.generate_stream(model="music-2.5+"))
 
@@ -485,8 +485,8 @@ class TestAsyncMusicGenerateStream:
             async def __aexit__(self, *args):
                 pass
 
-        mock_client._client = MagicMock()
-        mock_client._client.stream.return_value = AsyncStreamCM(mock_response)
+        mock_http._client = MagicMock()
+        mock_http._client.stream.return_value = AsyncStreamCM(mock_response)
 
         chunks = []
         async for chunk in music.generate_stream(

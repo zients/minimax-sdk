@@ -126,7 +126,7 @@ class TestConfigResolution:
     ) -> None:
         monkeypatch.setenv("MINIMAX_API_KEY", "sk-env-key")
         client = MiniMax()
-        assert client._http_client.api_key == "sk-env-key"
+        assert client._http_client._api_key == "sk-env-key"
 
 
 # ── Context manager ──────────────────────────────────────────────────────────
@@ -249,7 +249,7 @@ class TestAsyncMiniMaxConfigResolution:
             timeout_write=3.0,
             timeout_pool=4.0,
         )
-        assert client._http_client.api_key == "sk-test"
+        assert client._http_client._api_key == "sk-test"
 
 
 class TestAsyncMiniMaxContextManager:
