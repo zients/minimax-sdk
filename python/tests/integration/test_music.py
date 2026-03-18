@@ -74,6 +74,21 @@ class TestMusicGeneration:
         url = audio.data.decode("utf-8")
         assert url.startswith("http"), f"expected a URL, got: {url[:100]}"
 
+    def test_generate_stream(self, client):
+        """Stream music, collect chunks, verify non-empty bytes."""
+        chunks = []
+        for chunk in client.music.generate_stream(
+            model="music-2.5+",
+            lyrics=SHORT_LYRICS,
+            prompt="happy pop",
+        ):
+            assert isinstance(chunk, bytes), f"expected bytes, got {type(chunk)}"
+            chunks.append(chunk)
+
+        assert len(chunks) > 0, "should have received at least one chunk"
+        total = sum(len(c) for c in chunks)
+        assert total > 0, "total streamed bytes should be > 0"
+
     def test_generate_music_instrumental(self, client):
         """Generate instrumental music with is_instrumental=True."""
         audio = client.music.generate(
