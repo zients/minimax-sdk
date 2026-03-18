@@ -93,15 +93,9 @@ def _parse_design_result(resp: dict[str, Any]) -> VoiceDesignResult:
 def _parse_voice_list(resp: dict[str, Any]) -> VoiceList:
     """Parse the raw API response into a :class:`VoiceList`."""
     return VoiceList(
-        system_voice=[
-            VoiceInfo.model_validate(v) for v in resp.get("system_voice", [])
-        ],
-        voice_cloning=[
-            VoiceInfo.model_validate(v) for v in resp.get("voice_cloning", [])
-        ],
-        voice_generation=[
-            VoiceInfo.model_validate(v) for v in resp.get("voice_generation", [])
-        ],
+        system_voice=[VoiceInfo.model_validate(v) for v in resp.get("system_voice", [])],
+        voice_cloning=[VoiceInfo.model_validate(v) for v in resp.get("voice_cloning", [])],
+        voice_generation=[VoiceInfo.model_validate(v) for v in resp.get("voice_generation", [])],
     )
 
 
@@ -223,9 +217,7 @@ class Voice(SyncResource):
             A :class:`VoiceList` with separate lists for system, cloned,
             and generated voices (populated according to *voice_type*).
         """
-        resp = self._http.request(
-            "POST", "/v1/get_voice", json={"voice_type": voice_type}
-        )
+        resp = self._http.request("POST", "/v1/get_voice", json={"voice_type": voice_type})
         return _parse_voice_list(resp)
 
     def delete(self, voice_id: str, voice_type: str) -> None:
@@ -361,9 +353,7 @@ class AsyncVoice(AsyncResource):
             A :class:`VoiceList` with separate lists for system, cloned,
             and generated voices (populated according to *voice_type*).
         """
-        resp = await self._http.request(
-            "POST", "/v1/get_voice", json={"voice_type": voice_type}
-        )
+        resp = await self._http.request("POST", "/v1/get_voice", json={"voice_type": voice_type})
         return _parse_voice_list(resp)
 
     async def delete(self, voice_id: str, voice_type: str) -> None:

@@ -97,9 +97,7 @@ class Video(SyncResource):
             The raw API response dict containing ``status``, and on
             success ``file_id``, ``video_width``, ``video_height``.
         """
-        return self._http.request(
-            "GET", _QUERY_PATH, params={"task_id": task_id}
-        )
+        return self._http.request("GET", _QUERY_PATH, params={"task_id": task_id})
 
     # ── Private helper ───────────────────────────────────────────────────
 
@@ -393,9 +391,7 @@ class AsyncVideo(AsyncResource):
             The raw API response dict containing ``status``, and on
             success ``file_id``, ``video_width``, ``video_height``.
         """
-        return await self._http.request(
-            "GET", _QUERY_PATH, params={"task_id": task_id}
-        )
+        return await self._http.request("GET", _QUERY_PATH, params={"task_id": task_id})
 
     # ── Private helper ───────────────────────────────────────────────────
 

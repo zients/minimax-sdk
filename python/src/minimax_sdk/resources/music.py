@@ -127,7 +127,7 @@ def _parse_sse_line(line: str) -> dict[str, Any] | None:
     if not line or line.startswith(":"):
         return None
     if line.startswith("data:"):
-        payload = line[len("data:"):].strip()
+        payload = line[len("data:") :].strip()
         if payload == "[DONE]":
             return None
         try:

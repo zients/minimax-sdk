@@ -144,9 +144,7 @@ class MiniMax:
             dotenv.load_dotenv(dotenv.find_dotenv())
 
         # Step 2: Resolve configuration
-        resolved_api_key: str = _resolve_config(
-            api_key, "MINIMAX_API_KEY", "", cast=str
-        )
+        resolved_api_key: str = _resolve_config(api_key, "MINIMAX_API_KEY", "", cast=str)
         if not resolved_api_key:
             raise ValueError(
                 "MiniMax API key is required. Provide it via the 'api_key' "
@@ -266,9 +264,7 @@ class AsyncMiniMax:
             dotenv.load_dotenv(dotenv.find_dotenv())
 
         # Step 2: Resolve configuration
-        resolved_api_key: str = _resolve_config(
-            api_key, "MINIMAX_API_KEY", "", cast=str
-        )
+        resolved_api_key: str = _resolve_config(api_key, "MINIMAX_API_KEY", "", cast=str)
         if not resolved_api_key:
             raise ValueError(
                 "MiniMax API key is required. Provide it via the 'api_key' "

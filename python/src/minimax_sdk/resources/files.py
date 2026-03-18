@@ -86,9 +86,7 @@ class Files(SyncResource):
             A :class:`FileInfo` with a ``download_url`` (valid for ~1 hr
             for video files, ~9 hr for T2A async files).
         """
-        resp = self._http.request(
-            "GET", "/v1/files/retrieve", params={"file_id": file_id}
-        )
+        resp = self._http.request("GET", "/v1/files/retrieve", params={"file_id": file_id})
         return FileInfo.model_validate(resp["file"])
 
     def retrieve_content(self, file_id: str) -> bytes:
@@ -100,9 +98,7 @@ class Files(SyncResource):
         Returns:
             The file content as ``bytes``.
         """
-        return self._http.request(
-            "GET", "/v1/files/retrieve_content", params={"file_id": file_id}
-        )
+        return self._http.request("GET", "/v1/files/retrieve_content", params={"file_id": file_id})
 
     def delete(self, file_id: str, purpose: str) -> None:
         """Delete a file.
@@ -141,9 +137,7 @@ class AsyncFiles(AsyncResource):
 
         stream, should_close = _open_file(file)
         try:
-            resp = await self._http.upload(
-                "/v1/files/upload", file=stream, purpose=purpose
-            )
+            resp = await self._http.upload("/v1/files/upload", file=stream, purpose=purpose)
         finally:
             if should_close:
                 stream.close()
@@ -159,9 +153,7 @@ class AsyncFiles(AsyncResource):
         Returns:
             A list of :class:`FileInfo` objects.
         """
-        resp = await self._http.request(
-            "GET", "/v1/files/list", params={"purpose": purpose}
-        )
+        resp = await self._http.request("GET", "/v1/files/list", params={"purpose": purpose})
         return [FileInfo.model_validate(f) for f in resp["files"]]
 
     async def retrieve(self, file_id: str) -> FileInfo:
@@ -174,9 +166,7 @@ class AsyncFiles(AsyncResource):
             A :class:`FileInfo` with a ``download_url`` (valid for ~1 hr
             for video files, ~9 hr for T2A async files).
         """
-        resp = await self._http.request(
-            "GET", "/v1/files/retrieve", params={"file_id": file_id}
-        )
+        resp = await self._http.request("GET", "/v1/files/retrieve", params={"file_id": file_id})
         return FileInfo.model_validate(resp["file"])
 
     async def retrieve_content(self, file_id: str) -> bytes:

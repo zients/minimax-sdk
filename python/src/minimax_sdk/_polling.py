@@ -18,11 +18,13 @@ from minimax_sdk._http import AsyncHttpClient, HttpClient
 from minimax_sdk.exceptions import MiniMaxError, PollTimeoutError
 
 # Status values returned by the MiniMax query endpoints.
-_PENDING_STATUSES: frozenset[str] = frozenset({
-    "Preparing",
-    "Queueing",
-    "Processing",
-})
+_PENDING_STATUSES: frozenset[str] = frozenset(
+    {
+        "Preparing",
+        "Queueing",
+        "Processing",
+    }
+)
 _SUCCESS_STATUS: str = "Success"
 _FAIL_STATUS: str = "Fail"
 

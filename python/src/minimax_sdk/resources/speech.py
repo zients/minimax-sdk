@@ -196,7 +196,7 @@ def _iter_sse_audio_chunks(raw_iter: Iterator[Any]) -> Iterator[bytes]:
             if not text or text.startswith(":"):
                 continue
             if text.startswith("data:"):
-                text = text[len("data:"):].strip()
+                text = text[len("data:") :].strip()
             if text == "[DONE]":
                 return
             try:
@@ -223,7 +223,7 @@ async def _aiter_sse_audio_chunks(raw_iter: AsyncIterator[Any]) -> AsyncIterator
             if not text or text.startswith(":"):
                 continue
             if text.startswith("data:"):
-                text = text[len("data:"):].strip()
+                text = text[len("data:") :].strip()
             if text == "[DONE]":
                 return
             try:
@@ -380,9 +380,7 @@ class SpeechConnection:
                         trace_id=msg.get("trace_id", ""),
                     )
         except websockets.exceptions.ConnectionClosed as exc:
-            raise ConnectionError(
-                f"WebSocket connection closed unexpectedly: {exc}"
-            ) from exc
+            raise ConnectionError(f"WebSocket connection closed unexpectedly: {exc}") from exc
 
         return _audio_response_from_ws_chunks(hex_chunks, extra_info)
 
@@ -446,9 +444,7 @@ class SpeechConnection:
                         trace_id=msg.get("trace_id", ""),
                     )
         except websockets.exceptions.ConnectionClosed as exc:
-            raise ConnectionError(
-                f"WebSocket connection closed unexpectedly: {exc}"
-            ) from exc
+            raise ConnectionError(f"WebSocket connection closed unexpectedly: {exc}") from exc
 
     def close(self) -> None:
         """Send ``task_finish`` and close the WebSocket connection.
@@ -633,9 +629,7 @@ class AsyncSpeechConnection:
                         trace_id=msg.get("trace_id", ""),
                     )
         except websockets.exceptions.ConnectionClosed as exc:
-            raise ConnectionError(
-                f"WebSocket connection closed unexpectedly: {exc}"
-            ) from exc
+            raise ConnectionError(f"WebSocket connection closed unexpectedly: {exc}") from exc
 
         return _audio_response_from_ws_chunks(hex_chunks, extra_info)
 
@@ -698,9 +692,7 @@ class AsyncSpeechConnection:
                         trace_id=msg.get("trace_id", ""),
                     )
         except websockets.exceptions.ConnectionClosed as exc:
-            raise ConnectionError(
-                f"WebSocket connection closed unexpectedly: {exc}"
-            ) from exc
+            raise ConnectionError(f"WebSocket connection closed unexpectedly: {exc}") from exc
 
     async def close(self) -> None:
         """Send ``task_finish`` and close the WebSocket connection.
@@ -1344,9 +1336,7 @@ class AsyncSpeech(AsyncResource):
         headers = {"Authorization": f"Bearer {self._http.api_key}"}
 
         try:
-            ws = await websockets.asyncio.client.connect(
-                url, additional_headers=headers
-            )
+            ws = await websockets.asyncio.client.connect(url, additional_headers=headers)
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
