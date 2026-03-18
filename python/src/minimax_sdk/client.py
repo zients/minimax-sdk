@@ -12,7 +12,6 @@ from __future__ import annotations
 import os
 from typing import TypeVar
 
-import dotenv
 import httpx
 
 from minimax_sdk._http import AsyncHttpClient, HttpClient
@@ -111,7 +110,7 @@ class MiniMax:
 
     Provides access to all MiniMax resources via attribute namespaces::
 
-        client = MiniMax()  # reads .env automatically
+        client = MiniMax(api_key="sk-xxx")
         audio = client.speech.tts(text="Hello", model="speech-2.8-hd", ...)
         result = client.video.text_to_video(prompt="A cat", model="...", ...)
 
@@ -137,13 +136,8 @@ class MiniMax:
         max_retries: int | None = None,
         poll_interval: float | None = None,
         poll_timeout: float | None = None,
-        load_dotenv: bool = True,
     ) -> None:
-        # Step 1: Load .env if requested
-        if load_dotenv:
-            dotenv.load_dotenv(dotenv.find_dotenv())
-
-        # Step 2: Resolve configuration
+        # Resolve configuration
         resolved_api_key: str = _resolve_config(api_key, "MINIMAX_API_KEY", "", cast=str)
         if not resolved_api_key:
             raise ValueError(
@@ -231,7 +225,7 @@ class AsyncMiniMax:
 
     Provides access to all MiniMax resources via attribute namespaces::
 
-        client = AsyncMiniMax()
+        client = AsyncMiniMax(api_key="sk-xxx")
         audio = await client.speech.tts(text="Hello", model="speech-2.8-hd", ...)
         result = await client.video.text_to_video(prompt="A cat", model="...", ...)
 
@@ -257,13 +251,8 @@ class AsyncMiniMax:
         max_retries: int | None = None,
         poll_interval: float | None = None,
         poll_timeout: float | None = None,
-        load_dotenv: bool = True,
     ) -> None:
-        # Step 1: Load .env if requested
-        if load_dotenv:
-            dotenv.load_dotenv(dotenv.find_dotenv())
-
-        # Step 2: Resolve configuration
+        # Resolve configuration
         resolved_api_key: str = _resolve_config(api_key, "MINIMAX_API_KEY", "", cast=str)
         if not resolved_api_key:
             raise ValueError(

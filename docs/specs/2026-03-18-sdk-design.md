@@ -21,7 +21,7 @@ TypeScript version will follow in the same monorepo.
 | Client | Sync `MiniMax` + Async `AsyncMiniMax` |
 | Errors | Custom exception hierarchy |
 | HTTP client | httpx |
-| Config | `.env` via python-dotenv |
+| Config | Environment variables (no python-dotenv) |
 
 ---
 
@@ -87,7 +87,7 @@ All configurable via `.env` or constructor parameters.
 
 Priority: `parameter` > `.env` > `system env var` > `default value`
 
-`.env` loading: Uses `find_dotenv()` from python-dotenv. Only loads if a `.env` file exists in CWD or parent directories. Can be disabled with `MiniMax(load_dotenv=False)`.
+Configuration is read from constructor parameters or environment variables. The SDK does not auto-load `.env` files — users handle that in their own application if needed (e.g. `from dotenv import load_dotenv; load_dotenv()`).
 
 | Parameter | Env Var | Default |
 |-----------|---------|---------|
@@ -421,7 +421,6 @@ dependencies = [
     "httpx>=0.27",
     "websockets>=12.0",
     "pydantic>=2.0",
-    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]

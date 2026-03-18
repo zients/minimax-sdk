@@ -47,4 +47,4 @@ def minimax_client(monkeypatch: pytest.MonkeyPatch) -> MiniMax:
     monkeypatch.delenv("MINIMAX_TIMEOUT_WRITE", raising=False)
     monkeypatch.delenv("MINIMAX_TIMEOUT_POOL", raising=False)
 
-    return MiniMax(api_key="sk-test-fake-key", load_dotenv=False)
+    return MiniMax(api_key="sk-test-fake-key")
