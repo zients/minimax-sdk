@@ -68,26 +68,12 @@ def _parse_clone_result(resp: dict[str, Any], voice_id: str) -> VoiceCloneResult
     were supplied in the request), it is decoded into an
     :class:`AudioResponse`.
     """
-    demo_audio: AudioResponse | None = None
-    raw_demo = resp.get("demo_audio")
-    if raw_demo:
-        if isinstance(raw_demo, str):
-            # API returns demo_audio as a hex-encoded string
-            audio_bytes = decode_hex_audio(raw_demo)
-            demo_audio = AudioResponse(
-                data=audio_bytes,
-                duration=0,
-                sample_rate=0,
-                format="mp3",
-                size=len(audio_bytes),
-            )
-        else:
-            # Nested dict structure (fallback)
-            demo_audio = build_audio_response(raw_demo)
+    # demo_audio is a URL string when text+model are provided, otherwise empty ""
+    demo_audio_url = resp.get("demo_audio", "")
 
     return VoiceCloneResult(
         voice_id=voice_id,
-        demo_audio=demo_audio,
+        demo_audio=demo_audio_url if demo_audio_url else None,
         input_sensitive=resp.get("input_sensitive"),
     )
 

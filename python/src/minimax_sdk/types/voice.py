@@ -16,7 +16,7 @@ class VoiceCloneResult(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     voice_id: str
-    demo_audio: Optional[AudioResponse] = None
+    demo_audio: Optional[str] = None  # URL to preview audio, or None
     input_sensitive: Any = None
 
 
