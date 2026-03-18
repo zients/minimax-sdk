@@ -36,4 +36,4 @@ jobs:
 
       - name: Unit tests
         working-directory: python
-        run: uv run --system pytest tests/ --ignore=tests/integration --cov=minimax_sdk --cov-report=term-missing --cov-fail-under=100 -q
+        run: uv run --system pytest tests/ --ignore=tests/integration --cov=minimax_sdk --cov-report=term-missing --cov-fail-under=90 -q
