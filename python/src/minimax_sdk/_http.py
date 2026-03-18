@@ -7,6 +7,7 @@ with automatic error mapping, retry logic, and multipart upload support.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from pathlib import Path
 from collections.abc import AsyncIterator, Iterator
@@ -19,6 +20,8 @@ from minimax_sdk.exceptions import (
     RETRYABLE_CODES,
     MiniMaxError,
 )
+
+logger = logging.getLogger("minimax_sdk")
 
 _SDK_VERSION = "0.1.0"
 
@@ -115,6 +118,7 @@ class HttpClient:
         Raises a mapped :class:`MiniMaxError` subclass on API errors.
         Retries automatically on retryable status codes using exponential backoff.
         """
+        logger.debug("%s %s", method, path)
         last_exc: Exception | None = None
 
         for attempt in range(self.max_retries + 1):
@@ -135,16 +139,28 @@ class HttpClient:
             code, msg, trace_id = _parse_error(body)
 
             if code == 0:
+                logger.debug("%s %s -> 200 OK", method, path)
                 return body
 
             if _should_retry(code) and attempt < self.max_retries:
                 # For 1002 (Rate Limit), honour Retry-After header if present.
+                delay = _backoff_delay(attempt)
                 if code == 1002:
                     retry_after = _retry_after_seconds(response)
                     if retry_after is not None:
+                        logger.debug(
+                            "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
+                            method, path, code, msg, retry_after,
+                            attempt + 1, self.max_retries,
+                        )
                         time.sleep(retry_after)
                         continue
-                time.sleep(_backoff_delay(attempt))
+                logger.debug(
+                    "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
+                    method, path, code, msg, delay,
+                    attempt + 1, self.max_retries,
+                )
+                time.sleep(delay)
                 continue
 
             # Non-retryable or exhausted retries — raise immediately.
@@ -173,6 +189,7 @@ class HttpClient:
         the raw binary content.  Used for endpoints that return file data
         (e.g. ``/v1/files/retrieve_content``).
         """
+        logger.debug("%s %s (bytes)", method, path)
         response = self._client.request(method, path, **kwargs)
         response.raise_for_status()
         return response.content
@@ -190,6 +207,7 @@ class HttpClient:
         Uses the httpx ``stream()`` context manager for true streaming.
         Each yielded value is a text line from the response body.
         """
+        logger.debug("%s %s (stream)", method, path)
         with self._client.stream(method, path, **kwargs) as response:
             response.raise_for_status()
             yield from response.iter_lines()
@@ -213,6 +231,7 @@ class HttpClient:
         purpose:
             Upload purpose (e.g. ``"voice_clone"``, ``"prompt_audio"``).
         """
+        logger.debug("POST %s (upload, purpose=%s)", path, purpose)
         if isinstance(file, (str, Path)):
             file_path = Path(file)
             with open(file_path, "rb") as fh:
@@ -291,6 +310,7 @@ class AsyncHttpClient:
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Send an async HTTP request, decode JSON, map errors, and auto-retry."""
+        logger.debug("%s %s", method, path)
         last_exc: Exception | None = None
 
         for attempt in range(self.max_retries + 1):
@@ -311,15 +331,27 @@ class AsyncHttpClient:
             code, msg, trace_id = _parse_error(body)
 
             if code == 0:
+                logger.debug("%s %s -> 200 OK", method, path)
                 return body
 
             if _should_retry(code) and attempt < self.max_retries:
+                delay = _backoff_delay(attempt)
                 if code == 1002:
                     retry_after = _retry_after_seconds(response)
                     if retry_after is not None:
+                        logger.debug(
+                            "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
+                            method, path, code, msg, retry_after,
+                            attempt + 1, self.max_retries,
+                        )
                         await asyncio.sleep(retry_after)
                         continue
-                await asyncio.sleep(_backoff_delay(attempt))
+                logger.debug(
+                    "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
+                    method, path, code, msg, delay,
+                    attempt + 1, self.max_retries,
+                )
+                await asyncio.sleep(delay)
                 continue
 
             _raise_for_status(body)
@@ -341,6 +373,7 @@ class AsyncHttpClient:
         **kwargs: Any,
     ) -> bytes:
         """Send an async HTTP request and return raw response bytes."""
+        logger.debug("%s %s (bytes)", method, path)
         response = await self._client.request(method, path, **kwargs)
         response.raise_for_status()
         return response.content
@@ -358,6 +391,7 @@ class AsyncHttpClient:
         Uses the httpx ``stream()`` async context manager for true streaming.
         Each yielded value is a text line from the response body.
         """
+        logger.debug("%s %s (stream)", method, path)
         async with self._client.stream(method, path, **kwargs) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
@@ -372,6 +406,7 @@ class AsyncHttpClient:
         purpose: str,
     ) -> dict[str, Any]:
         """Upload a file via multipart/form-data (async)."""
+        logger.debug("POST %s (upload, purpose=%s)", path, purpose)
         if isinstance(file, (str, Path)):
             file_path = Path(file)
             with open(file_path, "rb") as fh:

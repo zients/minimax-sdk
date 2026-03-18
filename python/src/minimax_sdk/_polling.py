@@ -11,11 +11,14 @@ pattern with configurable interval and timeout.
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Any
 
 from minimax_sdk._http import AsyncHttpClient, HttpClient
 from minimax_sdk.exceptions import MiniMaxError, PollTimeoutError
+
+logger = logging.getLogger("minimax_sdk")
 
 # Status values returned by the MiniMax query endpoints.
 _PENDING_STATUSES: frozenset[str] = frozenset(
@@ -76,6 +79,7 @@ def poll_task(
         status = body.get("status", "")
 
         if status == _SUCCESS_STATUS:
+            logger.debug("Polling task_id=%s -> Success", task_id)
             return body
 
         if status == _FAIL_STATUS:
@@ -84,6 +88,8 @@ def poll_task(
             msg = base.get("status_msg", "Task failed")
             trace_id = body.get("trace_id", base.get("trace_id", ""))
             raise MiniMaxError(msg, code=code, trace_id=trace_id)
+
+        logger.debug("Polling task_id=%s -> %s", task_id, status or "unknown")
 
         if status not in _PENDING_STATUSES:
             # Unknown status — treat as still pending but log-worthy.
@@ -146,6 +152,7 @@ async def async_poll_task(
         status = body.get("status", "")
 
         if status == _SUCCESS_STATUS:
+            logger.debug("Polling task_id=%s -> Success", task_id)
             return body
 
         if status == _FAIL_STATUS:
@@ -154,6 +161,8 @@ async def async_poll_task(
             msg = base.get("status_msg", "Task failed")
             trace_id = body.get("trace_id", base.get("trace_id", ""))
             raise MiniMaxError(msg, code=code, trace_id=trace_id)
+
+        logger.debug("Polling task_id=%s -> %s", task_id, status or "unknown")
 
         if status not in _PENDING_STATUSES:
             pass

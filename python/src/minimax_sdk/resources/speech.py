@@ -8,8 +8,11 @@ real-time speech synthesis.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any, AsyncIterator, Iterator
 from urllib.parse import urlparse
+
+logger = logging.getLogger("minimax_sdk")
 
 import websockets
 import websockets.asyncio.client
@@ -338,6 +341,7 @@ class SpeechConnection:
         if self._closed:
             raise ConnectionError("SpeechConnection is already closed.")
 
+        logger.debug("WebSocket send text (%d chars)", len(text))
         continue_msg: dict[str, Any] = {
             "event": "task_continue",
             "text": text,
@@ -411,6 +415,7 @@ class SpeechConnection:
         if self._closed:
             raise ConnectionError("SpeechConnection is already closed.")
 
+        logger.debug("WebSocket send text (%d chars, stream)", len(text))
         continue_msg: dict[str, Any] = {
             "event": "task_continue",
             "text": text,
@@ -455,6 +460,7 @@ class SpeechConnection:
             return
         self._closed = True
 
+        logger.debug("WebSocket disconnecting")
         try:
             finish_msg: dict[str, Any] = {"event": "task_finish"}
             self._ws.send(json.dumps(finish_msg))
@@ -589,6 +595,7 @@ class AsyncSpeechConnection:
         if self._closed:
             raise ConnectionError("AsyncSpeechConnection is already closed.")
 
+        logger.debug("WebSocket send text (%d chars)", len(text))
         continue_msg: dict[str, Any] = {
             "event": "task_continue",
             "text": text,
@@ -659,6 +666,7 @@ class AsyncSpeechConnection:
         if self._closed:
             raise ConnectionError("AsyncSpeechConnection is already closed.")
 
+        logger.debug("WebSocket send text (%d chars, stream)", len(text))
         continue_msg: dict[str, Any] = {
             "event": "task_continue",
             "text": text,
@@ -703,6 +711,7 @@ class AsyncSpeechConnection:
             return
         self._closed = True
 
+        logger.debug("WebSocket disconnecting")
         try:
             finish_msg: dict[str, Any] = {"event": "task_finish"}
             await self._ws.send(json.dumps(finish_msg))
@@ -944,6 +953,7 @@ class Speech(SyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
+        logger.debug("WebSocket connecting to %s", url)
         try:
             ws = websockets.sync.client.connect(url, additional_headers=headers)
         except Exception as exc:
@@ -1335,6 +1345,7 @@ class AsyncSpeech(AsyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
+        logger.debug("WebSocket connecting to %s", url)
         try:
             ws = await websockets.asyncio.client.connect(url, additional_headers=headers)
         except Exception as exc:
