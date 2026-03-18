@@ -188,7 +188,7 @@ def _iter_sse_audio_chunks(raw_iter: Iterator[Any]) -> Iterator[bytes]:
     """
     for chunk in raw_iter:
         if isinstance(chunk, dict):
-            data_section = chunk.get("data", {})
+            data_section = chunk.get("data") or {}
             hex_audio = data_section.get("audio", "")
             if hex_audio:
                 yield decode_hex_audio(hex_audio)
@@ -204,7 +204,7 @@ def _iter_sse_audio_chunks(raw_iter: Iterator[Any]) -> Iterator[bytes]:
                 return
             try:
                 parsed = json.loads(text)
-                data_section = parsed.get("data", {})
+                data_section = parsed.get("data") or {}
                 hex_audio = data_section.get("audio", "")
                 if hex_audio:
                     yield decode_hex_audio(hex_audio)
@@ -216,7 +216,7 @@ async def _aiter_sse_audio_chunks(raw_iter: AsyncIterator[Any]) -> AsyncIterator
     """Async version of :func:`_iter_sse_audio_chunks`."""
     async for chunk in raw_iter:
         if isinstance(chunk, dict):
-            data_section = chunk.get("data", {})
+            data_section = chunk.get("data") or {}
             hex_audio = data_section.get("audio", "")
             if hex_audio:
                 yield decode_hex_audio(hex_audio)
@@ -231,7 +231,7 @@ async def _aiter_sse_audio_chunks(raw_iter: AsyncIterator[Any]) -> AsyncIterator
                 return
             try:
                 parsed = json.loads(text)
-                data_section = parsed.get("data", {})
+                data_section = parsed.get("data") or {}
                 hex_audio = data_section.get("audio", "")
                 if hex_audio:
                     yield decode_hex_audio(hex_audio)
@@ -363,7 +363,7 @@ class SpeechConnection:
                 event = msg.get("event", "")
 
                 if event == "task_continued":
-                    data_section = msg.get("data", {})
+                    data_section = msg.get("data") or {}
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         hex_chunks.append(hex_audio)
@@ -434,7 +434,7 @@ class SpeechConnection:
                 event = msg.get("event", "")
 
                 if event == "task_continued":
-                    data_section = msg.get("data", {})
+                    data_section = msg.get("data") or {}
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         yield decode_hex_audio(hex_audio)
@@ -617,7 +617,7 @@ class AsyncSpeechConnection:
                 event = msg.get("event", "")
 
                 if event == "task_continued":
-                    data_section = msg.get("data", {})
+                    data_section = msg.get("data") or {}
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         hex_chunks.append(hex_audio)
@@ -685,7 +685,7 @@ class AsyncSpeechConnection:
                 event = msg.get("event", "")
 
                 if event == "task_continued":
-                    data_section = msg.get("data", {})
+                    data_section = msg.get("data") or {}
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         yield decode_hex_audio(hex_audio)
@@ -953,9 +953,14 @@ class Speech(SyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         logger.debug("WebSocket connecting to %s", url)
         try:
-            ws = websockets.sync.client.connect(url, additional_headers=headers)
+            ws = websockets.sync.client.connect(url, additional_headers=headers, ssl=ssl_context)
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
@@ -1345,9 +1350,14 @@ class AsyncSpeech(AsyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         logger.debug("WebSocket connecting to %s", url)
         try:
-            ws = await websockets.asyncio.client.connect(url, additional_headers=headers)
+            ws = await websockets.asyncio.client.connect(url, additional_headers=headers, ssl=ssl_context)
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
