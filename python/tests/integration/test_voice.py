@@ -77,8 +77,11 @@ class TestVoiceIntegration:
     def test_4_voice_upload_and_clone(self, client):
         """Upload a synthetic MP3, then clone a voice."""
         # Step 1: Upload synthetic MP3 using a temp file
+        import os
+
         mp3_data = _make_minimal_mp3()
         tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".mp3")
+        os.close(tmp_fd)
         tmp_path = Path(tmp_path_str)
         try:
             tmp_path.write_bytes(mp3_data)

@@ -6,6 +6,7 @@ No token/credit consumption.
 Run with: cd python && uv run pytest tests/integration/test_files.py -v
 """
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -41,6 +42,7 @@ class TestFilesIntegration:
         """Upload a synthetic MP3 with purpose='voice_clone'."""
         mp3_data = _make_minimal_mp3()
         tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".mp3")
+        os.close(tmp_fd)
         tmp_path = Path(tmp_path_str)
         try:
             tmp_path.write_bytes(mp3_data)

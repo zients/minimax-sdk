@@ -188,10 +188,18 @@ class HttpClient:
         Unlike :meth:`request`, this does **not** parse JSON — it returns
         the raw binary content.  Used for endpoints that return file data
         (e.g. ``/v1/files/retrieve_content``).
+
+        If the response is JSON with a non-zero ``base_resp.status_code``,
+        the appropriate MiniMax exception is raised.
         """
         logger.debug("%s %s (bytes)", method, path)
         response = self._client.request(method, path, **kwargs)
         response.raise_for_status()
+        # Check for MiniMax API error disguised as 200 OK
+        content_type = response.headers.get("content-type", "")
+        if "application/json" in content_type:
+            body = response.json()
+            _raise_for_status(body)
         return response.content
 
     # ── Stream request ────────────────────────────────────────────────────
@@ -210,6 +218,11 @@ class HttpClient:
         logger.debug("%s %s (stream)", method, path)
         with self._client.stream(method, path, **kwargs) as response:
             response.raise_for_status()
+            # Check content-type — if JSON, it's likely an error response
+            content_type = response.headers.get("content-type", "")
+            if "application/json" in content_type and "text/event-stream" not in content_type:
+                body = response.json()
+                _raise_for_status(body)
             yield from response.iter_lines()
 
     # ── Upload ────────────────────────────────────────────────────────────
@@ -376,6 +389,10 @@ class AsyncHttpClient:
         logger.debug("%s %s (bytes)", method, path)
         response = await self._client.request(method, path, **kwargs)
         response.raise_for_status()
+        content_type = response.headers.get("content-type", "")
+        if "application/json" in content_type:
+            body = response.json()
+            _raise_for_status(body)
         return response.content
 
     # ── Stream request ────────────────────────────────────────────────────
@@ -394,6 +411,10 @@ class AsyncHttpClient:
         logger.debug("%s %s (stream)", method, path)
         async with self._client.stream(method, path, **kwargs) as response:
             response.raise_for_status()
+            content_type = response.headers.get("content-type", "")
+            if "application/json" in content_type and "text/event-stream" not in content_type:
+                body = response.json()
+                _raise_for_status(body)
             async for line in response.aiter_lines():
                 yield line
 
