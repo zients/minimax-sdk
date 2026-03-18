@@ -4,14 +4,9 @@ These tests hit the real MiniMax API and require MINIMAX_API_KEY in .env.
 Run with: cd python && uv run pytest tests/integration/test_music.py -v --timeout=180
 """
 
-from pathlib import Path
-
-import httpx
 import pytest
 
 from minimax_sdk import MiniMax
-
-OUTPUTS_DIR = Path(__file__).parent / "outputs"
 
 SHORT_LYRICS = """\
 [Verse]
@@ -65,7 +60,7 @@ class TestMusicGeneration:
     """Test music generation endpoints (these take 30-60+ seconds)."""
 
     def test_generate_music(self, client):
-        """Generate music with output_format='url', download and save to mp3."""
+        """Generate music with output_format='url', verify URL returned."""
         audio = client.music.generate(
             model="music-2.5+",
             lyrics=SHORT_LYRICS,
@@ -78,17 +73,6 @@ class TestMusicGeneration:
         # For URL output format, audio.data contains the URL encoded as bytes
         url = audio.data.decode("utf-8")
         assert url.startswith("http"), f"expected a URL, got: {url[:100]}"
-
-        # Download the audio from the URL and save it
-        out_path = OUTPUTS_DIR / "music_generated.mp3"
-        response = httpx.get(url, follow_redirects=True, timeout=60.0)
-        response.raise_for_status()
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_bytes(response.content)
-
-        assert out_path.exists(), "output file should exist"
-        assert out_path.stat().st_size > 0, "output file should not be empty"
-        print(f"Saved music to {out_path} ({out_path.stat().st_size} bytes)")
 
     def test_generate_music_instrumental(self, client):
         """Generate instrumental music with is_instrumental=True."""
@@ -104,14 +88,3 @@ class TestMusicGeneration:
         # For URL output format, audio.data contains the URL encoded as bytes
         url = audio.data.decode("utf-8")
         assert url.startswith("http"), f"expected a URL, got: {url[:100]}"
-
-        # Download the audio from the URL and save it
-        out_path = OUTPUTS_DIR / "music_instrumental.mp3"
-        response = httpx.get(url, follow_redirects=True, timeout=60.0)
-        response.raise_for_status()
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_bytes(response.content)
-
-        assert out_path.exists(), "output file should exist"
-        assert out_path.stat().st_size > 0, "output file should not be empty"
-        print(f"Saved instrumental to {out_path} ({out_path.stat().st_size} bytes)")

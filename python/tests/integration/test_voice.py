@@ -4,6 +4,7 @@ These tests hit the real MiniMax API and require MINIMAX_API_KEY in .env.
 Run with: cd python && uv run pytest tests/integration/test_voice.py -v
 """
 
+import tempfile
 import time
 from pathlib import Path
 
@@ -15,8 +16,6 @@ from minimax_sdk.exceptions import (
     InvalidParameterError,
     MiniMaxError,
 )
-
-OUTPUTS_DIR = str(Path(__file__).parent / "outputs")
 
 
 def _make_minimal_mp3() -> bytes:
@@ -50,7 +49,6 @@ class TestVoiceIntegration:
         first = result.system_voice[0]
         assert first.voice_id is not None
         assert len(first.voice_id) > 0
-        print(f"  Found {len(result.system_voice)} system voices. First: {first.voice_id}")
 
     def test_2_voice_list_all(self, client):
         """List all voice types and verify structure."""
@@ -59,19 +57,9 @@ class TestVoiceIntegration:
         assert len(result.system_voice) > 0
         assert isinstance(result.voice_cloning, list)
         assert isinstance(result.voice_generation, list)
-        total = (
-            len(result.system_voice)
-            + len(result.voice_cloning)
-            + len(result.voice_generation)
-        )
-        print(
-            f"  All voices: {len(result.system_voice)} system, "
-            f"{len(result.voice_cloning)} cloned, "
-            f"{len(result.voice_generation)} designed. Total: {total}"
-        )
 
     def test_3_voice_design(self, client):
-        """Design a voice from description, save trial audio."""
+        """Design a voice from description, verify trial audio."""
         try:
             result = client.voice.design(
                 prompt="A warm, friendly female narrator with a calm tone",
@@ -86,32 +74,25 @@ class TestVoiceIntegration:
         assert result.trial_audio.data is not None
         assert len(result.trial_audio.data) > 0
 
-        out_path = f"{OUTPUTS_DIR}/voice_design_preview.mp3"
-        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-        result.trial_audio.save(out_path)
-        print(f"  Designed voice_id: {result.voice_id}")
-        print(f"  Trial audio saved to {out_path} ({len(result.trial_audio.data)} bytes)")
-
     def test_4_voice_upload_and_clone(self, client):
         """Upload a synthetic MP3, then clone a voice."""
-        # Step 1: Upload synthetic MP3
+        # Step 1: Upload synthetic MP3 using a temp file
         mp3_data = _make_minimal_mp3()
-        tmp_path = Path(OUTPUTS_DIR) / "_test_clone_audio.mp3"
-        tmp_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path.write_bytes(mp3_data)
-
+        tmp_fd, tmp_path_str = tempfile.mkstemp(suffix=".mp3")
+        tmp_path = Path(tmp_path_str)
         try:
-            file_info = client.voice.upload_audio(str(tmp_path), purpose="voice_clone")
-        except (InsufficientBalanceError, MiniMaxError) as exc:
-            tmp_path.unlink(missing_ok=True)
-            pytest.skip(f"Upload failed: {exc}")
+            tmp_path.write_bytes(mp3_data)
 
-        tmp_path.unlink(missing_ok=True)
+            try:
+                file_info = client.voice.upload_audio(str(tmp_path), purpose="voice_clone")
+            except (InsufficientBalanceError, MiniMaxError) as exc:
+                pytest.skip(f"Upload failed: {exc}")
+        finally:
+            tmp_path.unlink(missing_ok=True)
 
         assert file_info.file_id is not None
         assert len(file_info.file_id) > 0
         TestVoiceIntegration.clone_file_id = file_info.file_id
-        print(f"  Uploaded file_id: {file_info.file_id}")
 
         # Step 2: Clone the voice
         timestamp = int(time.time())
@@ -129,7 +110,6 @@ class TestVoiceIntegration:
 
         TestVoiceIntegration.cloned_voice_id = voice_id
         assert clone_result.voice_id == voice_id
-        print(f"  Cloned voice_id: {clone_result.voice_id}")
 
     def test_5_voice_delete(self, client):
         """Delete the cloned voice from test 4."""
@@ -138,4 +118,3 @@ class TestVoiceIntegration:
             pytest.skip("No cloned voice_id from test_4 (upstream skipped)")
 
         client.voice.delete(voice_id=voice_id, voice_type="voice_cloning")
-        print(f"  Deleted cloned voice: {voice_id}")

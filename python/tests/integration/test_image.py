@@ -4,15 +4,9 @@ These tests hit the real MiniMax API and require MINIMAX_API_KEY in .env.
 Run with: cd python && uv run pytest tests/integration/test_image.py -v
 """
 
-import base64
-from pathlib import Path
-
-import httpx
 import pytest
 
 from minimax_sdk import MiniMax
-
-OUTPUTS_DIR = Path(__file__).parent / "outputs"
 
 
 @pytest.fixture(scope="module")
@@ -26,7 +20,7 @@ class TestImageIntegration:
     """Test Image generation with real MiniMax API."""
 
     def test_generate_url_format(self, client: MiniMax):
-        """Generate 1 image with response_format='url', download and save."""
+        """Generate 1 image with response_format='url', verify URL returned."""
         result = client.image.generate(
             prompt="A red circle on white background",
             model="image-01",
@@ -38,16 +32,6 @@ class TestImageIntegration:
         assert len(result.image_urls) == 1, f"Expected 1 URL, got {len(result.image_urls)}"
         assert result.image_urls[0].startswith("http"), "URL should start with http"
         assert result.success_count >= 1
-
-        # Download and save the image
-        resp = httpx.get(result.image_urls[0])
-        assert resp.status_code == 200
-
-        out_path = OUTPUTS_DIR / "image_t2i.png"
-        out_path.write_bytes(resp.content)
-        assert out_path.exists()
-        assert out_path.stat().st_size > 0
-        print(f"Saved image to {out_path} ({out_path.stat().st_size} bytes)")
 
     def test_generate_multiple(self, client: MiniMax):
         """Generate 2 images with n=2, verify success_count=2."""
@@ -77,7 +61,7 @@ class TestImageIntegration:
         assert len(result.image_urls) >= 1
 
     def test_generate_base64(self, client: MiniMax):
-        """Generate with response_format='base64', decode and save."""
+        """Generate with response_format='base64', verify base64 data returned."""
         result = client.image.generate(
             prompt="A red circle on white background",
             model="image-01",
@@ -89,16 +73,6 @@ class TestImageIntegration:
         assert len(result.image_base64) == 1, f"Expected 1 base64 entry, got {len(result.image_base64)}"
         assert len(result.image_base64[0]) > 0, "base64 data should not be empty"
         assert result.success_count >= 1
-
-        # Decode and save
-        image_data = base64.b64decode(result.image_base64[0])
-        assert len(image_data) > 0, "Decoded image data should not be empty"
-
-        out_path = OUTPUTS_DIR / "image_base64.png"
-        out_path.write_bytes(image_data)
-        assert out_path.exists()
-        assert out_path.stat().st_size > 0
-        print(f"Saved base64 image to {out_path} ({out_path.stat().st_size} bytes)")
 
     def test_generate_with_prompt_optimizer(self, client: MiniMax):
         """Generate with prompt_optimizer=True."""

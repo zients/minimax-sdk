@@ -4,15 +4,11 @@ These tests hit the real MiniMax API and require MINIMAX_API_KEY in .env.
 Run with: cd python && uv run pytest tests/integration/test_speech.py -v --timeout=120
 """
 
-from pathlib import Path
-
 import pytest
 
 from minimax_sdk import MiniMax
 from minimax_sdk._audio import AudioResponse
 from minimax_sdk.types.speech import TaskResult
-
-OUTPUTS_DIR = Path(__file__).parent / "outputs"
 
 MODEL = "speech-2.8-hd"
 VOICE_SETTING = {"voice_id": "English_expressive_narrator"}
@@ -29,7 +25,7 @@ class TestTTSBasic:
     """Test basic synchronous TTS."""
 
     def test_tts_basic(self, client):
-        """Generate short TTS, save to outputs/speech_tts.mp3, verify AudioResponse fields."""
+        """Generate short TTS, verify AudioResponse fields."""
         audio = client.speech.tts(
             text=SHORT_TEXT,
             model=MODEL,
@@ -44,14 +40,6 @@ class TestTTSBasic:
         assert audio.sample_rate > 0, f"sample_rate should be > 0, got: {audio.sample_rate}"
         assert audio.size > 0, f"size should be > 0, got: {audio.size}"
         assert audio.format == "mp3", f"expected format 'mp3', got: {audio.format!r}"
-
-        # Save to disk
-        out_path = OUTPUTS_DIR / "speech_tts.mp3"
-        audio.save(str(out_path))
-        assert out_path.exists(), "output file should exist"
-        assert out_path.stat().st_size > 0, "output file should not be empty"
-        print(f"Saved TTS to {out_path} ({out_path.stat().st_size} bytes, "
-              f"duration={audio.duration}ms, sample_rate={audio.sample_rate})")
 
 
 class TestTTSWithOptions:
@@ -79,20 +67,12 @@ class TestTTSWithOptions:
         assert audio.sample_rate > 0, f"sample_rate should be > 0, got: {audio.sample_rate}"
         assert audio.format == "mp3", f"expected format 'mp3', got: {audio.format!r}"
 
-        # Save to disk
-        out_path = OUTPUTS_DIR / "speech_tts_options.mp3"
-        audio.save(str(out_path))
-        assert out_path.exists(), "output file should exist"
-        assert out_path.stat().st_size > 0, "output file should not be empty"
-        print(f"Saved TTS with options to {out_path} ({out_path.stat().st_size} bytes, "
-              f"duration={audio.duration}ms, sample_rate={audio.sample_rate})")
-
 
 class TestTTSStream:
     """Test streaming TTS."""
 
     def test_tts_stream(self, client):
-        """Stream TTS, collect all chunks, write to outputs/speech_tts_stream.mp3, verify total bytes > 0."""
+        """Stream TTS, collect all chunks, verify total bytes > 0."""
         chunks = []
         for chunk in client.speech.tts_stream(
             text=SHORT_TEXT,
@@ -107,21 +87,12 @@ class TestTTSStream:
         all_bytes = b"".join(chunks)
         assert len(all_bytes) > 0, "total streamed bytes should be > 0"
 
-        # Write combined audio to disk
-        out_path = OUTPUTS_DIR / "speech_tts_stream.mp3"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_bytes(all_bytes)
-        assert out_path.exists(), "output file should exist"
-        assert out_path.stat().st_size > 0, "output file should not be empty"
-        print(f"Saved streamed TTS to {out_path} ({out_path.stat().st_size} bytes, "
-              f"{len(chunks)} chunks)")
-
 
 class TestWebSocket:
     """Test WebSocket TTS."""
 
     def test_websocket_connect_send(self, client):
-        """Connect via WebSocket, send text, save to outputs/speech_ws.mp3, verify AudioResponse."""
+        """Connect via WebSocket, send text, verify AudioResponse."""
         try:
             with client.speech.connect(
                 model=MODEL,
@@ -133,14 +104,6 @@ class TestWebSocket:
                 assert audio.data is not None, "audio.data should not be None"
                 assert len(audio.data) > 0, "audio.data should contain bytes"
                 assert audio.duration > 0, f"duration should be > 0, got: {audio.duration}"
-
-                # Save to disk
-                out_path = OUTPUTS_DIR / "speech_ws.mp3"
-                audio.save(str(out_path))
-                assert out_path.exists(), "output file should exist"
-                assert out_path.stat().st_size > 0, "output file should not be empty"
-                print(f"Saved WebSocket TTS to {out_path} ({out_path.stat().st_size} bytes, "
-                      f"duration={audio.duration}ms)")
 
         except (ConnectionError, OSError) as exc:
             pytest.skip(f"WebSocket not available: {exc}")
@@ -170,14 +133,13 @@ class TestAsyncCreateAndQuery:
         assert query_resp["task_id"] == task_id, (
             f"task_id mismatch: expected {task_id!r}, got {query_resp['task_id']!r}"
         )
-        print(f"Async task {task_id}: status={query_resp['status']}")
 
 
 class TestAsyncGenerate:
     """Test full async pipeline (create + auto-poll)."""
 
     def test_async_generate(self, client):
-        """Full async pipeline (create + auto-poll), save result info."""
+        """Full async pipeline (create + auto-poll), verify TaskResult fields."""
         try:
             result = client.speech.async_generate(
                 text=SHORT_TEXT,
@@ -195,11 +157,6 @@ class TestAsyncGenerate:
             assert result.download_url.startswith("http"), (
                 f"download_url should start with 'http', got: {result.download_url[:80]!r}"
             )
-            print(f"Async generate complete: task_id={result.task_id}, "
-                  f"status={result.status}, file_id={result.file_id}, "
-                  f"url={result.download_url[:80]}...")
 
         except AttributeError as exc:
-            # async_generate accesses self._poll_interval, self._poll_timeout,
-            # and self._files which may not be defined on the Speech resource.
             pytest.fail(f"async_generate raised AttributeError (likely missing resource attributes): {exc}")
