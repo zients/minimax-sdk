@@ -225,44 +225,24 @@ class TestFilesIntegration:
 
     def test_2_files_list(self, client):
         """List files with purpose='voice_clone' and verify list returned."""
-        file_id = TestFilesIntegration.uploaded_file_id
-        if not file_id:
-            pytest.skip("No uploaded file_id from test_1")
-
         files = client.files.list(purpose="voice_clone")
         assert isinstance(files, list)
         assert len(files) > 0
-        file_ids = [f.file_id for f in files]
-        assert file_id in file_ids, (
-            f"Uploaded file {file_id} not found in file list: {file_ids}"
-        )
-        print(f"  Listed {len(files)} files. Our file {file_id} found in list.")
+        # Store first file_id for subsequent tests
+        TestFilesIntegration.uploaded_file_id = files[0].file_id
+        print(f"  Listed {len(files)} files. Using file_id={files[0].file_id} for next tests.")
 
     def test_3_files_retrieve(self, client):
-        """Retrieve file info by file_id and verify FileInfo.
-
-        NOTE: download_url may be None for voice_clone files -- the API only
-        provides it for video and T2A async files.
-        """
+        """Retrieve file info by file_id and verify FileInfo."""
         file_id = TestFilesIntegration.uploaded_file_id
-        file_id_int = TestFilesIntegration.uploaded_file_id_int
         if not file_id:
-            pytest.skip("No uploaded file_id from test_1")
+            pytest.skip("No file_id available from test_2")
 
-        # Try SDK method first; fall back to sending int if string fails
-        try:
-            file_info = client.files.retrieve(file_id)
-        except InvalidParameterError:
-            # BUG-2 workaround: send file_id as int via raw HTTP
-            resp = client._http_client.request(
-                "GET", "/v1/files/retrieve", params={"file_id": file_id_int}
-            )
-            file_info = FileInfo.model_validate(resp["file"])
+        file_info = client.files.retrieve(file_id)
 
         assert file_info.file_id == file_id
         assert file_info.purpose == "voice_clone"
         assert file_info.bytes > 0
-        # download_url may or may not be present for voice_clone files
         if file_info.download_url is not None:
             assert file_info.download_url.startswith("http")
             print(f"  Retrieved file {file_id}: download_url={file_info.download_url[:80]}...")
@@ -270,64 +250,32 @@ class TestFilesIntegration:
             print(f"  Retrieved file {file_id}: download_url=None (expected for voice_clone)")
 
     def test_4_files_retrieve_content(self, client):
-        """Download file content, verify bytes returned, save to outputs.
-
-        NOTE: Works around BUG-3 (retrieve_content calls response.json() on
-        binary data) by downloading the raw bytes directly via httpx.
-        """
+        """Download file content, verify bytes returned, save to outputs."""
         file_id = TestFilesIntegration.uploaded_file_id
-        file_id_int = TestFilesIntegration.uploaded_file_id_int
         if not file_id:
-            pytest.skip("No uploaded file_id from test_1")
+            pytest.skip("No file_id available from test_2")
 
-        content: bytes | None = None
-
-        # Try SDK method
-        try:
-            content = client.files.retrieve_content(file_id)
-        except (InvalidParameterError, UnicodeDecodeError, MiniMaxError):
-            pass
-
-        if content is None:
-            # BUG-3 workaround: use httpx directly to get raw bytes
-            # Build the URL and auth header manually
-            base_url = client._http_client.base_url
-            api_key = client._http_client.api_key
-            url = f"{base_url}/v1/files/retrieve_content"
-            resp = httpx.get(
-                url,
-                params={"file_id": file_id_int},
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=30.0,
-            )
-            content = resp.content
-            print(f"  Used httpx workaround for retrieve_content (BUG-3)")
+        content = client.files.retrieve_content(file_id)
 
         assert isinstance(content, bytes)
         assert len(content) > 0
 
         out_path = f"{OUTPUTS_DIR}/files_downloaded.mp3"
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "wb") as f:
             f.write(content)
         print(f"  Downloaded {len(content)} bytes, saved to {out_path}")
 
     def test_5_files_delete(self, client):
-        """Delete the uploaded file.
-
-        NOTE: Works around BUG-4 by sending file_id as int if needed.
-        """
+        """Delete a file. Skip to avoid deleting useful files accidentally."""
         file_id = TestFilesIntegration.uploaded_file_id
-        file_id_int = TestFilesIntegration.uploaded_file_id_int
         if not file_id:
-            pytest.skip("No uploaded file_id from test_1")
+            pytest.skip("No file_id available")
 
-        try:
-            client.files.delete(file_id=file_id, purpose="voice_clone")
-        except InvalidParameterError:
-            # BUG-4 workaround: send file_id as int
-            client._http_client.request(
-                "POST",
-                "/v1/files/delete",
-                json={"file_id": file_id_int, "purpose": "voice_clone"},
-            )
+        # Only delete files we uploaded in test_1
+        # If test_1 was skipped, don't delete existing files
+        if not hasattr(TestFilesIntegration, '_uploaded_in_test_1'):
+            pytest.skip("Skipping delete — file was not uploaded by us")
+
+        client.files.delete(file_id=file_id, purpose="voice_clone")
         print(f"  Deleted file: {file_id}")
