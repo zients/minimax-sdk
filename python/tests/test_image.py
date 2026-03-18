@@ -17,15 +17,14 @@ def _ok_resp(payload: dict) -> dict:
 
 
 def _make_image_resource() -> tuple[Image, MagicMock]:
-    """Create an Image resource with mocked _client.
+    """Create an Image resource with mocked _http.
 
-    Image.generate() calls self._client.request(), where _client is the
-    MiniMax top-level client (passed as the second arg to SyncResource.__init__).
+    Image.generate() calls self._http.request().
     """
     mock_http = MagicMock()
     mock_client = MagicMock()
     image = Image(mock_http, client=mock_client)
-    return image, mock_client
+    return image, mock_http
 
 
 # ── Tests ────────────────────────────────────────────────────────────────────
@@ -215,11 +214,11 @@ from minimax_sdk.resources.image import AsyncImage
 
 
 def _make_async_image_resource() -> tuple[AsyncImage, MagicMock]:
-    """Create an AsyncImage resource with mocked _client."""
+    """Create an AsyncImage resource with mocked _http."""
     mock_http = AsyncMock()
     mock_client = AsyncMock()
     image = AsyncImage(mock_http, client=mock_client)
-    return image, mock_client
+    return image, mock_http
 
 
 class TestAsyncImageGenerate:

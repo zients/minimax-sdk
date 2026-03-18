@@ -12,3 +12,5 @@ build/
 uv.lock
 .coverage
 .claude/
+.DS_Store
+python/tests/integration/outputs/

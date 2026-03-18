@@ -181,7 +181,7 @@ class Music(SyncResource):
             audio_setting=audio_setting,
         )
 
-        resp = self._client.request("POST", "/v1/music_generation", json=body)
+        resp = self._http.request("POST", "/v1/music_generation", json=body)
         return _build_audio_response_from_music(resp)
 
     def generate_stream(
@@ -265,7 +265,7 @@ class Music(SyncResource):
             title=title,
         )
 
-        resp = self._client.request("POST", "/v1/lyrics_generation", json=body)
+        resp = self._http.request("POST", "/v1/lyrics_generation", json=body)
         return _parse_lyrics_result(resp)
 
 
@@ -313,7 +313,7 @@ class AsyncMusic(AsyncResource):
             audio_setting=audio_setting,
         )
 
-        resp = await self._client.request("POST", "/v1/music_generation", json=body)
+        resp = await self._http.request("POST", "/v1/music_generation", json=body)
         return _build_audio_response_from_music(resp)
 
     async def generate_stream(
@@ -397,5 +397,5 @@ class AsyncMusic(AsyncResource):
             title=title,
         )
 
-        resp = await self._client.request("POST", "/v1/lyrics_generation", json=body)
+        resp = await self._http.request("POST", "/v1/lyrics_generation", json=body)
         return _parse_lyrics_result(resp)

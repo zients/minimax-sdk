@@ -153,6 +153,24 @@ class HttpClient:
             ) from last_exc
         raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
 
+    # ── Raw bytes request ────────────────────────────────────────────────
+
+    def request_bytes(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> bytes:
+        """Send an HTTP request and return raw response bytes.
+
+        Unlike :meth:`request`, this does **not** parse JSON — it returns
+        the raw binary content.  Used for endpoints that return file data
+        (e.g. ``/v1/files/retrieve_content``).
+        """
+        response = self._client.request(method, path, **kwargs)
+        response.raise_for_status()
+        return response.content
+
     # ── Upload ────────────────────────────────────────────────────────────
 
     def upload(
@@ -287,6 +305,19 @@ class AsyncHttpClient:
                 trace_id="",
             ) from last_exc
         raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
+
+    # ── Raw bytes request ────────────────────────────────────────────────
+
+    async def request_bytes(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> bytes:
+        """Send an async HTTP request and return raw response bytes."""
+        response = await self._client.request(method, path, **kwargs)
+        response.raise_for_status()
+        return response.content
 
     # ── Upload ────────────────────────────────────────────────────────────
 

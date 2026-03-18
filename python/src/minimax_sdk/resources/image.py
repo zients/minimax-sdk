@@ -121,7 +121,7 @@ class Image(SyncResource):
             subject_reference=subject_reference,
         )
 
-        resp = self._client.request("POST", "/v1/image_generation", json=body)
+        resp = self._http.request("POST", "/v1/image_generation", json=body)
         return _parse_image_result(resp)
 
 
@@ -184,5 +184,5 @@ class AsyncImage(AsyncResource):
             subject_reference=subject_reference,
         )
 
-        resp = await self._client.request("POST", "/v1/image_generation", json=body)
+        resp = await self._http.request("POST", "/v1/image_generation", json=body)
         return _parse_image_result(resp)

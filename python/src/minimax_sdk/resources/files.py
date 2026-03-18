@@ -86,7 +86,9 @@ class Files(SyncResource):
             A :class:`FileInfo` with a ``download_url`` (valid for ~1 hr
             for video files, ~9 hr for T2A async files).
         """
-        resp = self._http.request("GET", "/v1/files/retrieve", params={"file_id": file_id})
+        resp = self._http.request(
+            "GET", "/v1/files/retrieve", params={"file_id": int(file_id)}
+        )
         return FileInfo.model_validate(resp["file"])
 
     def retrieve_content(self, file_id: str) -> bytes:
@@ -98,7 +100,9 @@ class Files(SyncResource):
         Returns:
             The file content as ``bytes``.
         """
-        return self._http.request("GET", "/v1/files/retrieve_content", params={"file_id": file_id})
+        return self._http.request_bytes(
+            "GET", "/v1/files/retrieve_content", params={"file_id": int(file_id)}
+        )
 
     def delete(self, file_id: str, purpose: str) -> None:
         """Delete a file.
@@ -110,7 +114,7 @@ class Files(SyncResource):
         self._http.request(
             "POST",
             "/v1/files/delete",
-            json={"file_id": file_id, "purpose": purpose},
+            json={"file_id": int(file_id), "purpose": purpose},
         )
 
 
@@ -166,7 +170,9 @@ class AsyncFiles(AsyncResource):
             A :class:`FileInfo` with a ``download_url`` (valid for ~1 hr
             for video files, ~9 hr for T2A async files).
         """
-        resp = await self._http.request("GET", "/v1/files/retrieve", params={"file_id": file_id})
+        resp = await self._http.request(
+            "GET", "/v1/files/retrieve", params={"file_id": int(file_id)}
+        )
         return FileInfo.model_validate(resp["file"])
 
     async def retrieve_content(self, file_id: str) -> bytes:
@@ -178,8 +184,8 @@ class AsyncFiles(AsyncResource):
         Returns:
             The file content as ``bytes``.
         """
-        return await self._http.request(
-            "GET", "/v1/files/retrieve_content", params={"file_id": file_id}
+        return await self._http.request_bytes(
+            "GET", "/v1/files/retrieve_content", params={"file_id": int(file_id)}
         )
 
     async def delete(self, file_id: str, purpose: str) -> None:
@@ -192,5 +198,5 @@ class AsyncFiles(AsyncResource):
         await self._http.request(
             "POST",
             "/v1/files/delete",
-            json={"file_id": file_id, "purpose": purpose},
+            json={"file_id": int(file_id), "purpose": purpose},
         )

@@ -18,15 +18,14 @@ def _ok_resp(payload: dict) -> dict:
 
 
 def _make_music_resource() -> tuple[Music, MagicMock]:
-    """Create a Music resource with mocked _client.
+    """Create a Music resource with mocked _http.
 
-    Music.generate() and Music.generate_lyrics() call self._client.request(),
-    where _client is the MiniMax top-level client passed to SyncResource.__init__.
+    Music.generate() and Music.generate_lyrics() call self._http.request().
     """
     mock_http = MagicMock()
     mock_client = MagicMock()
     music = Music(mock_http, client=mock_client)
-    return music, mock_client
+    return music, mock_http
 
 
 # Some sample hex-encoded audio (b"music" -> hex "6d75736963")
@@ -348,11 +347,11 @@ from minimax_sdk.resources.music import AsyncMusic
 
 
 def _make_async_music_resource() -> tuple[AsyncMusic, MagicMock]:
-    """Create an AsyncMusic resource with mocked _client."""
+    """Create an AsyncMusic resource with mocked _http."""
     mock_http = AsyncMock()
     mock_client = AsyncMock()
     music = AsyncMusic(mock_http, client=mock_client)
-    return music, mock_client
+    return music, mock_http
 
 
 class TestAsyncMusicGenerate:

@@ -129,7 +129,7 @@ class TestFilesRetrieve:
         assert result.file_id == "999"
         assert result.download_url == "https://cdn.minimax.io/files/999?token=abc"
         mock_http.request.assert_called_once_with(
-            "GET", "/v1/files/retrieve", params={"file_id": "999"}
+            "GET", "/v1/files/retrieve", params={"file_id": 999}
         )
 
 
@@ -147,7 +147,7 @@ class TestFilesDelete:
         mock_http.request.assert_called_once_with(
             "POST",
             "/v1/files/delete",
-            json={"file_id": "999", "purpose": "voice_clone"},
+            json={"file_id": 999, "purpose": "voice_clone"},
         )
 
 
@@ -155,15 +155,15 @@ class TestFilesRetrieveContent:
     """Tests for files.retrieve_content()."""
 
     def test_retrieve_content_returns_raw_response(self):
-        """files.retrieve_content() returns whatever _http.request returns."""
+        """files.retrieve_content() uses request_bytes for binary data."""
         files, mock_http = _make_files_resource()
-        mock_http.request.return_value = b"raw file content"
+        mock_http.request_bytes.return_value = b"raw file content"
 
-        result = files.retrieve_content("file_42")
+        result = files.retrieve_content("42")
 
         assert result == b"raw file content"
-        mock_http.request.assert_called_once_with(
-            "GET", "/v1/files/retrieve_content", params={"file_id": "file_42"}
+        mock_http.request_bytes.assert_called_once_with(
+            "GET", "/v1/files/retrieve_content", params={"file_id": 42}
         )
 
 
@@ -268,7 +268,7 @@ class TestAsyncFilesRetrieve:
         assert result.file_id == "999"
         assert result.download_url == "https://cdn.minimax.io/files/999?token=abc"
         mock_http.request.assert_awaited_once_with(
-            "GET", "/v1/files/retrieve", params={"file_id": "999"}
+            "GET", "/v1/files/retrieve", params={"file_id": 999}
         )
 
 
@@ -277,15 +277,15 @@ class TestAsyncFilesRetrieveContent:
 
     @pytest.mark.asyncio
     async def test_retrieve_content_returns_raw_response(self):
-        """Async files.retrieve_content() returns raw response."""
+        """Async files.retrieve_content() uses request_bytes for binary data."""
         files, mock_http = _make_async_files_resource()
-        mock_http.request.return_value = b"raw content"
+        mock_http.request_bytes.return_value = b"raw content"
 
-        result = await files.retrieve_content("file_42")
+        result = await files.retrieve_content("42")
 
         assert result == b"raw content"
-        mock_http.request.assert_awaited_once_with(
-            "GET", "/v1/files/retrieve_content", params={"file_id": "file_42"}
+        mock_http.request_bytes.assert_awaited_once_with(
+            "GET", "/v1/files/retrieve_content", params={"file_id": 42}
         )
 
 
@@ -304,5 +304,5 @@ class TestAsyncFilesDelete:
         mock_http.request.assert_awaited_once_with(
             "POST",
             "/v1/files/delete",
-            json={"file_id": "999", "purpose": "voice_clone"},
+            json={"file_id": 999, "purpose": "voice_clone"},
         )
