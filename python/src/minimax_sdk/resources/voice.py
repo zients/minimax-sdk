@@ -106,12 +106,8 @@ def _parse_design_result(resp: dict[str, Any]) -> VoiceDesignResult:
 def _parse_voice_list(resp: dict[str, Any]) -> VoiceList:
     """Parse the raw API response into a :class:`VoiceList`."""
     return VoiceList(
-        system_voice=[
-            VoiceInfo.model_validate(v) for v in (resp.get("system_voice") or [])
-        ],
-        voice_cloning=[
-            VoiceInfo.model_validate(v) for v in (resp.get("voice_cloning") or [])
-        ],
+        system_voice=[VoiceInfo.model_validate(v) for v in (resp.get("system_voice") or [])],
+        voice_cloning=[VoiceInfo.model_validate(v) for v in (resp.get("voice_cloning") or [])],
         voice_generation=[
             VoiceInfo.model_validate(v) for v in (resp.get("voice_generation") or [])
         ],

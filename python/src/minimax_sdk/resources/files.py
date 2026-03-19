@@ -86,9 +86,7 @@ class Files(SyncResource):
             A :class:`FileInfo` with a ``download_url`` (valid for ~1 hr
             for video files, ~9 hr for T2A async files).
         """
-        resp = self._http.request(
-            "GET", "/v1/files/retrieve", params={"file_id": int(file_id)}
-        )
+        resp = self._http.request("GET", "/v1/files/retrieve", params={"file_id": int(file_id)})
         return FileInfo.model_validate(resp["file"])
 
     def retrieve_content(self, file_id: str) -> bytes:

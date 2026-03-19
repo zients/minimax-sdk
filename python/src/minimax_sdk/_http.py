@@ -150,15 +150,25 @@ class HttpClient:
                     if retry_after is not None:
                         logger.debug(
                             "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
-                            method, path, code, msg, retry_after,
-                            attempt + 1, self.max_retries,
+                            method,
+                            path,
+                            code,
+                            msg,
+                            retry_after,
+                            attempt + 1,
+                            self.max_retries,
                         )
                         time.sleep(retry_after)
                         continue
                 logger.debug(
                     "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
-                    method, path, code, msg, delay,
-                    attempt + 1, self.max_retries,
+                    method,
+                    path,
+                    code,
+                    msg,
+                    delay,
+                    attempt + 1,
+                    self.max_retries,
                 )
                 time.sleep(delay)
                 continue
@@ -354,15 +364,25 @@ class AsyncHttpClient:
                     if retry_after is not None:
                         logger.debug(
                             "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
-                            method, path, code, msg, retry_after,
-                            attempt + 1, self.max_retries,
+                            method,
+                            path,
+                            code,
+                            msg,
+                            retry_after,
+                            attempt + 1,
+                            self.max_retries,
                         )
                         await asyncio.sleep(retry_after)
                         continue
                 logger.debug(
                     "%s %s -> %d %s, retrying in %.1fs (attempt %d/%d)",
-                    method, path, code, msg, delay,
-                    attempt + 1, self.max_retries,
+                    method,
+                    path,
+                    code,
+                    msg,
+                    delay,
+                    attempt + 1,
+                    self.max_retries,
                 )
                 await asyncio.sleep(delay)
                 continue

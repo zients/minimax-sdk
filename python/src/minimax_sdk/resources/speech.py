@@ -12,8 +12,6 @@ import logging
 from typing import Any, AsyncIterator, Iterator
 from urllib.parse import urlparse
 
-logger = logging.getLogger("minimax_sdk")
-
 import websockets
 import websockets.asyncio.client
 import websockets.sync.client
@@ -24,6 +22,8 @@ from .._http import _raise_for_status
 from .._polling import async_poll_task, poll_task
 from ..exceptions import MiniMaxError
 from ..types.speech import TaskResult
+
+logger = logging.getLogger("minimax_sdk")
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -945,6 +945,7 @@ class Speech(SyncResource):
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
         import ssl
+
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
@@ -1342,13 +1343,16 @@ class AsyncSpeech(AsyncResource):
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
         import ssl
+
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
 
         logger.debug("WebSocket connecting to %s", url)
         try:
-            ws = await websockets.asyncio.client.connect(url, additional_headers=headers, ssl=ssl_context)
+            ws = await websockets.asyncio.client.connect(
+                url, additional_headers=headers, ssl=ssl_context
+            )
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
