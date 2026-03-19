@@ -367,15 +367,11 @@ class SpeechConnection:
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         hex_chunks.append(hex_audio)
-                    # Capture extra_info from the last chunk
                     if "extra_info" in msg:
                         extra_info = msg["extra_info"]
-
-                elif event == "task_complete":
-                    # All chunks received — finalize
-                    if "extra_info" in msg:
-                        extra_info = msg["extra_info"]
-                    break
+                    # is_final signals the last chunk for this text
+                    if msg.get("is_final"):
+                        break
 
                 elif event == "task_failed":
                     raise MiniMaxError(
@@ -438,9 +434,8 @@ class SpeechConnection:
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         yield decode_hex_audio(hex_audio)
-
-                elif event == "task_complete":
-                    return
+                    if msg.get("is_final"):
+                        return
 
                 elif event == "task_failed":
                     raise MiniMaxError(
@@ -623,11 +618,8 @@ class AsyncSpeechConnection:
                         hex_chunks.append(hex_audio)
                     if "extra_info" in msg:
                         extra_info = msg["extra_info"]
-
-                elif event == "task_complete":
-                    if "extra_info" in msg:
-                        extra_info = msg["extra_info"]
-                    break
+                    if msg.get("is_final"):
+                        break
 
                 elif event == "task_failed":
                     raise MiniMaxError(
@@ -689,9 +681,8 @@ class AsyncSpeechConnection:
                     hex_audio = data_section.get("audio", "")
                     if hex_audio:
                         yield decode_hex_audio(hex_audio)
-
-                elif event == "task_complete":
-                    return
+                    if msg.get("is_final"):
+                        return
 
                 elif event == "task_failed":
                     raise MiniMaxError(
