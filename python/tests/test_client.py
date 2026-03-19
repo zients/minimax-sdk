@@ -105,13 +105,6 @@ class TestConfigResolution:
         )
         assert client.poll_interval == 10.0
 
-    def test_poll_timeout_from_env(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv("MINIMAX_POLL_TIMEOUT", "1200")
-        client = MiniMax(api_key="sk-test")
-        assert client.poll_timeout == 1200.0
-
     def test_max_retries_from_param(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -221,13 +214,6 @@ class TestAsyncMiniMaxConfigResolution:
             api_key="sk-test", poll_interval=10.0
         )
         assert client.poll_interval == 10.0
-
-    def test_poll_timeout_from_env(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv("MINIMAX_POLL_TIMEOUT", "1200")
-        client = AsyncMiniMax(api_key="sk-test")
-        assert client.poll_timeout == 1200.0
 
     def test_max_retries_from_param(
         self, monkeypatch: pytest.MonkeyPatch

@@ -111,28 +111,14 @@ def _build_config(
         base_url, "MINIMAX_BASE_URL", _DEFAULT_BASE_URL, cast=str
     )
     timeout = httpx.Timeout(
-        connect=_resolve_config(
-            timeout_connect, "MINIMAX_TIMEOUT_CONNECT", _DEFAULT_TIMEOUT_CONNECT, cast=float
-        ),
-        read=_resolve_config(
-            timeout_read, "MINIMAX_TIMEOUT_READ", _DEFAULT_TIMEOUT_READ, cast=float
-        ),
-        write=_resolve_config(
-            timeout_write, "MINIMAX_TIMEOUT_WRITE", _DEFAULT_TIMEOUT_WRITE, cast=float
-        ),
-        pool=_resolve_config(
-            timeout_pool, "MINIMAX_TIMEOUT_POOL", _DEFAULT_TIMEOUT_POOL, cast=float
-        ),
+        connect=timeout_connect if timeout_connect is not None else _DEFAULT_TIMEOUT_CONNECT,
+        read=timeout_read if timeout_read is not None else _DEFAULT_TIMEOUT_READ,
+        write=timeout_write if timeout_write is not None else _DEFAULT_TIMEOUT_WRITE,
+        pool=timeout_pool if timeout_pool is not None else _DEFAULT_TIMEOUT_POOL,
     )
-    resolved_max_retries: int = _resolve_config(
-        max_retries, "MINIMAX_MAX_RETRIES", _DEFAULT_MAX_RETRIES, cast=int
-    )
-    resolved_poll_interval: float = _resolve_config(
-        poll_interval, "MINIMAX_POLL_INTERVAL", _DEFAULT_POLL_INTERVAL, cast=float
-    )
-    resolved_poll_timeout: float = _resolve_config(
-        poll_timeout, "MINIMAX_POLL_TIMEOUT", _DEFAULT_POLL_TIMEOUT, cast=float
-    )
+    resolved_max_retries = max_retries if max_retries is not None else _DEFAULT_MAX_RETRIES
+    resolved_poll_interval = poll_interval if poll_interval is not None else _DEFAULT_POLL_INTERVAL
+    resolved_poll_timeout = poll_timeout if poll_timeout is not None else _DEFAULT_POLL_TIMEOUT
 
     return _ResolvedConfig(
         api_key=resolved_api_key,
@@ -156,7 +142,8 @@ class MiniMax:
         audio = client.speech.tts(text="Hello", model="speech-2.8-hd", ...)
         result = client.video.text_to_video(prompt="A cat", model="...", ...)
 
-    Configuration is resolved with priority: parameter > env var > default.
+    Configuration is resolved with priority: parameter > default.
+    Only ``api_key`` and ``base_url`` support environment variables.
     """
 
     speech: Speech
@@ -239,7 +226,8 @@ class AsyncMiniMax:
         audio = await client.speech.tts(text="Hello", model="speech-2.8-hd", ...)
         result = await client.video.text_to_video(prompt="A cat", model="...", ...)
 
-    Configuration is resolved with priority: parameter > env var > default.
+    Configuration is resolved with priority: parameter > default.
+    Only ``api_key`` and ``base_url`` support environment variables.
     """
 
     speech: AsyncSpeech

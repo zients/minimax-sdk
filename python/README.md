@@ -71,23 +71,12 @@ client = MiniMax(
 
 ### Environment Variables
 
-Every constructor parameter can also be configured via an environment variable. The SDK resolves values in this priority order:
+Only `api_key` and `base_url` support environment variables. All other settings use constructor parameters with built-in defaults.
 
-1. **Constructor parameter** (highest priority)
-2. **Environment variable**
-3. **Built-in default**
-
-| Environment Variable        | Default                     | Description                       |
-|-----------------------------|-----------------------------|-----------------------------------|
-| `MINIMAX_API_KEY`           | *(required)*                | Your MiniMax API key              |
-| `MINIMAX_BASE_URL`          | `https://api.minimax.io`    | API base URL                      |
-| `MINIMAX_TIMEOUT_CONNECT`   | `5.0`                       | Connection timeout (seconds)      |
-| `MINIMAX_TIMEOUT_READ`      | `600.0`                     | Read timeout (seconds)            |
-| `MINIMAX_TIMEOUT_WRITE`     | `600.0`                     | Write timeout (seconds)           |
-| `MINIMAX_TIMEOUT_POOL`      | `600.0`                     | Pool timeout (seconds)            |
-| `MINIMAX_MAX_RETRIES`       | `2`                         | Max retries on transient errors   |
-| `MINIMAX_POLL_INTERVAL`     | `5.0`                       | Polling interval (seconds)        |
-| `MINIMAX_POLL_TIMEOUT`      | `600.0`                     | Polling timeout (seconds)         |
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `MINIMAX_API_KEY` | *(required)* | Your MiniMax API key |
+| `MINIMAX_BASE_URL` | `https://api.minimax.io` | API base URL |
 
 ```bash
 export MINIMAX_API_KEY="your-api-key"
