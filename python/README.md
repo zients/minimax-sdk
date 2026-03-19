@@ -154,6 +154,8 @@ status = client.speech.async_query(task_id)
 
 ### Voice -- `client.voice`
 
+> **Note:** `voice.clone` and `voice.design` require a [pay-as-you-go](https://platform.minimax.io/user-center/basic-information/interface-key) account with sufficient balance. They are not covered by the Token Plan. `voice.list` and `voice.delete` work with any account.
+
 #### Clone a Voice
 
 ```python

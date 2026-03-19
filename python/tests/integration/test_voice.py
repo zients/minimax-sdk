@@ -66,7 +66,9 @@ class TestVoiceIntegration:
                 preview_text="Hello, this is a test of voice design.",
             )
         except InsufficientBalanceError as exc:
-            pytest.skip(f"API balance/limit issue: {exc}")
+            pytest.skip(
+                f"voice.design requires pay-as-you-go balance, not covered by Token Plan: {exc}"
+            )
 
         assert result.voice_id is not None
         assert len(result.voice_id) > 0
@@ -107,7 +109,9 @@ class TestVoiceIntegration:
                 voice_id=voice_id,
             )
         except InsufficientBalanceError as exc:
-            pytest.skip(f"Clone failed due to API balance issue: {exc}")
+            pytest.skip(
+                f"voice.clone requires pay-as-you-go balance, not covered by Token Plan: {exc}"
+            )
         except InvalidParameterError as exc:
             pytest.skip(f"Clone failed with invalid params: {exc}")
 
