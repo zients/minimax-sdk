@@ -16,12 +16,15 @@ from minimax_sdk._http import (
     HttpClient,
     _backoff_delay,
     _parse_error,
+    _raise_anthropic_error,
     _raise_for_status,
     _retry_after_seconds,
     _should_retry,
 )
 from minimax_sdk.exceptions import (
     AuthError,
+    InsufficientBalanceError,
+    InvalidParameterError,
     MiniMaxError,
     RateLimitError,
     ServerError,
@@ -1038,3 +1041,327 @@ class TestAsyncStreamRequest:
         with pytest.raises(InsufficientBalanceError):
             async for _ in client.stream_request("POST", "/v1/t2a_v2"):
                 pass
+
+
+# ── _raise_anthropic_error helper ────────────────────────────────────────────
+
+
+class TestRaiseAnthropicError:
+    def test_authentication_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 401
+        body = {
+            "type": "error",
+            "error": {"type": "authentication_error", "message": "Invalid API key"},
+            "request_id": "req_123",
+        }
+        with pytest.raises(AuthError) as exc_info:
+            _raise_anthropic_error(response, body)
+        assert exc_info.value.code == 401
+        assert "Invalid API key" in exc_info.value.message
+        assert exc_info.value.trace_id == "req_123"
+
+    def test_rate_limit_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 429
+        body = {
+            "type": "error",
+            "error": {"type": "rate_limit_error", "message": "Rate limited"},
+        }
+        with pytest.raises(RateLimitError) as exc_info:
+            _raise_anthropic_error(response, body)
+        assert exc_info.value.code == 429
+
+    def test_invalid_request_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 400
+        body = {
+            "type": "error",
+            "error": {"type": "invalid_request_error", "message": "Bad param"},
+        }
+        with pytest.raises(InvalidParameterError):
+            _raise_anthropic_error(response, body)
+
+    def test_billing_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 402
+        body = {
+            "type": "error",
+            "error": {"type": "billing_error", "message": "No payment"},
+        }
+        with pytest.raises(InsufficientBalanceError):
+            _raise_anthropic_error(response, body)
+
+    def test_server_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 500
+        body = {
+            "type": "error",
+            "error": {"type": "api_error", "message": "Internal error"},
+        }
+        with pytest.raises(ServerError):
+            _raise_anthropic_error(response, body)
+
+    def test_overloaded_error(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 529
+        body = {
+            "type": "error",
+            "error": {"type": "overloaded_error", "message": "Overloaded"},
+        }
+        with pytest.raises(ServerError):
+            _raise_anthropic_error(response, body)
+
+    def test_unknown_error_type_falls_back(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 418
+        body = {
+            "type": "error",
+            "error": {"type": "unknown_future_error", "message": "New error"},
+        }
+        with pytest.raises(MiniMaxError):
+            _raise_anthropic_error(response, body)
+
+    def test_missing_request_id(self) -> None:
+        response = MagicMock(spec=httpx.Response)
+        response.status_code = 400
+        body = {
+            "type": "error",
+            "error": {"type": "invalid_request_error", "message": "Bad"},
+        }
+        with pytest.raises(InvalidParameterError) as exc_info:
+            _raise_anthropic_error(response, body)
+        assert exc_info.value.trace_id == ""
+
+
+# ── HttpClient.request_anthropic() ──────────────────────────────────────────
+
+
+class TestHttpClientRequestAnthropic:
+    def test_success_returns_body(self) -> None:
+        client = HttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "id": "msg_001",
+            "type": "message",
+            "content": [{"type": "text", "text": "Hello"}],
+        }
+        client._client = MagicMock()
+        client._client.request.return_value = mock_response
+
+        result = client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+        assert result["id"] == "msg_001"
+        assert result["content"][0]["text"] == "Hello"
+
+    def test_auth_error_raises(self) -> None:
+        client = HttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            "type": "error",
+            "error": {"type": "authentication_error", "message": "Invalid key"},
+            "request_id": "req_001",
+        }
+        client._client = MagicMock()
+        client._client.request.return_value = mock_response
+
+        with pytest.raises(AuthError) as exc_info:
+            client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert exc_info.value.code == 401
+
+    def test_rate_limit_retries(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=1)
+
+        rate_limit_resp = MagicMock(spec=httpx.Response)
+        rate_limit_resp.status_code = 429
+        rate_limit_resp.headers = {"retry-after": "0.01"}
+        rate_limit_resp.json.return_value = {
+            "type": "error",
+            "error": {"type": "rate_limit_error", "message": "Rate limited"},
+        }
+
+        success_resp = MagicMock(spec=httpx.Response)
+        success_resp.status_code = 200
+        success_resp.json.return_value = {"id": "msg_002", "type": "message", "content": []}
+
+        client._client = MagicMock()
+        client._client.request.side_effect = [rate_limit_resp, success_resp]
+
+        result = client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert result["id"] == "msg_002"
+        assert client._client.request.call_count == 2
+
+    def test_server_error_retries(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=1)
+
+        error_resp = MagicMock(spec=httpx.Response)
+        error_resp.status_code = 500
+        error_resp.headers = {}
+        error_resp.json.return_value = {
+            "type": "error",
+            "error": {"type": "api_error", "message": "Internal"},
+        }
+
+        success_resp = MagicMock(spec=httpx.Response)
+        success_resp.status_code = 200
+        success_resp.json.return_value = {"id": "msg_003", "type": "message", "content": []}
+
+        client._client = MagicMock()
+        client._client.request.side_effect = [error_resp, success_resp]
+
+        result = client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert result["id"] == "msg_003"
+
+    def test_retries_exhausted_raises(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=1)
+
+        error_resp = MagicMock(spec=httpx.Response)
+        error_resp.status_code = 500
+        error_resp.headers = {}
+        error_resp.json.return_value = {
+            "type": "error",
+            "error": {"type": "api_error", "message": "Still broken"},
+        }
+
+        client._client = MagicMock()
+        client._client.request.return_value = error_resp
+
+        with pytest.raises(ServerError):
+            client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+    def test_non_retryable_error_raises_immediately(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=2)
+
+        error_resp = MagicMock(spec=httpx.Response)
+        error_resp.status_code = 400
+        error_resp.json.return_value = {
+            "type": "error",
+            "error": {"type": "invalid_request_error", "message": "Bad request"},
+        }
+
+        client._client = MagicMock()
+        client._client.request.return_value = error_resp
+
+        with pytest.raises(InvalidParameterError):
+            client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        # Should not retry 400 errors
+        assert client._client.request.call_count == 1
+
+    def test_transport_error_retries(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=1)
+
+        success_resp = MagicMock(spec=httpx.Response)
+        success_resp.status_code = 200
+        success_resp.json.return_value = {"id": "msg_004", "type": "message", "content": []}
+
+        client._client = MagicMock()
+        client._client.request.side_effect = [
+            httpx.ConnectError("Connection refused"),
+            success_resp,
+        ]
+
+        result = client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert result["id"] == "msg_004"
+
+    def test_transport_error_exhausted(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=0)
+
+        client._client = MagicMock()
+        client._client.request.side_effect = httpx.ConnectError("Connection refused")
+
+        with pytest.raises(MiniMaxError, match="HTTP transport error"):
+            client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+    def test_non_json_error_response(self) -> None:
+        client = HttpClient(api_key="sk-key", max_retries=0)
+
+        error_resp = MagicMock(spec=httpx.Response)
+        error_resp.status_code = 502
+        error_resp.text = "Bad Gateway"
+        error_resp.json.side_effect = ValueError("No JSON")
+
+        client._client = MagicMock()
+        client._client.request.return_value = error_resp
+
+        with pytest.raises(MiniMaxError, match="HTTP 502"):
+            client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+
+# ── AsyncHttpClient.request_anthropic() ─────────────────────────────────────
+
+
+class TestAsyncHttpClientRequestAnthropic:
+    @pytest.mark.asyncio
+    async def test_success_returns_body(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "id": "msg_async_001",
+            "type": "message",
+            "content": [{"type": "text", "text": "Hi"}],
+        }
+        client._client = AsyncMock()
+        client._client.request.return_value = mock_response
+
+        result = await client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert result["id"] == "msg_async_001"
+
+    @pytest.mark.asyncio
+    async def test_auth_error_raises(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            "type": "error",
+            "error": {"type": "authentication_error", "message": "Invalid key"},
+        }
+        client._client = AsyncMock()
+        client._client.request.return_value = mock_response
+
+        with pytest.raises(AuthError):
+            await client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+    @pytest.mark.asyncio
+    async def test_rate_limit_retries_then_succeeds(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key", max_retries=1)
+
+        rate_resp = MagicMock(spec=httpx.Response)
+        rate_resp.status_code = 429
+        rate_resp.headers = {}
+
+        ok_resp = MagicMock(spec=httpx.Response)
+        ok_resp.status_code = 200
+        ok_resp.json.return_value = {"id": "msg_async_002", "type": "message", "content": []}
+
+        client._client = AsyncMock()
+        client._client.request.side_effect = [rate_resp, ok_resp]
+
+        result = await client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+        assert result["id"] == "msg_async_002"
+
+    @pytest.mark.asyncio
+    async def test_transport_error_exhausted(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key", max_retries=0)
+        client._client = AsyncMock()
+        client._client.request.side_effect = httpx.ConnectError("fail")
+
+        with pytest.raises(MiniMaxError, match="HTTP transport error"):
+            await client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+    @pytest.mark.asyncio
+    async def test_non_json_error(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key", max_retries=0)
+
+        error_resp = MagicMock(spec=httpx.Response)
+        error_resp.status_code = 502
+        error_resp.text = "Bad Gateway"
+        error_resp.json.side_effect = ValueError("No JSON")
+
+        client._client = AsyncMock()
+        client._client.request.return_value = error_resp
+
+        with pytest.raises(MiniMaxError, match="HTTP 502"):
+            await client.request_anthropic("POST", "/anthropic/v1/messages", json={})

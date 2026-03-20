@@ -19,6 +19,7 @@ from minimax_sdk.resources.files import AsyncFiles, Files
 from minimax_sdk.resources.image import AsyncImage, Image
 from minimax_sdk.resources.music import AsyncMusic, Music
 from minimax_sdk.resources.speech import AsyncSpeech, Speech
+from minimax_sdk.resources.text import AsyncText, Text
 from minimax_sdk.resources.video import AsyncVideo, Video
 from minimax_sdk.resources.voice import AsyncVoice, Voice
 
@@ -146,6 +147,7 @@ class MiniMax:
     Only ``api_key`` and ``base_url`` support environment variables.
     """
 
+    text: Text
     speech: Speech
     voice: Voice
     video: Video
@@ -189,6 +191,7 @@ class MiniMax:
         )
 
         # Mount resource namespaces
+        self.text = Text(self._http_client, self)
         self.speech = Speech(self._http_client, self)
         self.voice = Voice(self._http_client, self)
         self.video = Video(self._http_client, self)
@@ -230,6 +233,7 @@ class AsyncMiniMax:
     Only ``api_key`` and ``base_url`` support environment variables.
     """
 
+    text: AsyncText
     speech: AsyncSpeech
     voice: AsyncVoice
     video: AsyncVideo
@@ -273,6 +277,7 @@ class AsyncMiniMax:
         )
 
         # Mount resource namespaces
+        self.text = AsyncText(self._http_client, self)
         self.speech = AsyncSpeech(self._http_client, self)
         self.voice = AsyncVoice(self._http_client, self)
         self.video = AsyncVideo(self._http_client, self)

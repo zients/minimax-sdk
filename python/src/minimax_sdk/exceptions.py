@@ -149,3 +149,18 @@ ERROR_CODE_MAP: dict[int, type[MiniMaxError]] = {
 
 # Codes that should trigger automatic retry with exponential backoff.
 RETRYABLE_CODES: set[int] = {1000, 1001, 1002, 1024, 1033}
+
+
+# ── Anthropic-compatible error mapping ───────────────────────────────────────
+
+ANTHROPIC_ERROR_TYPE_MAP: dict[str, type[MiniMaxError]] = {
+    "authentication_error": AuthError,
+    "billing_error": InsufficientBalanceError,
+    "permission_error": AuthError,
+    "rate_limit_error": RateLimitError,
+    "invalid_request_error": InvalidParameterError,
+    "not_found_error": MiniMaxError,
+    "request_too_large": InvalidParameterError,
+    "api_error": ServerError,
+    "overloaded_error": ServerError,
+}

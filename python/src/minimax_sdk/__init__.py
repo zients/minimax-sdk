@@ -32,6 +32,14 @@ from minimax_sdk.exceptions import (
 from minimax_sdk.types.files import FileInfo
 from minimax_sdk.types.image import ImageResult, ImageSubjectReference
 from minimax_sdk.types.music import LyricsResult
+from minimax_sdk.types.text import (
+    ContentBlock,
+    Message,
+    TextBlock,
+    ThinkingBlock,
+    ToolUseBlock,
+    Usage,
+)
 from minimax_sdk.types.video import VideoResult
 from minimax_sdk.types.voice import (
     VoiceCloneResult,
@@ -64,6 +72,13 @@ __all__ = [
     "ServerError",
     # Types — shared
     "AudioResponse",
+    # Types — text
+    "Message",
+    "ContentBlock",
+    "TextBlock",
+    "ToolUseBlock",
+    "ThinkingBlock",
+    "Usage",
     # Types — video
     "VideoResult",
     # Types — image

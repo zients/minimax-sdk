@@ -11,6 +11,7 @@ from minimax_sdk.resources.files import Files
 from minimax_sdk.resources.image import Image
 from minimax_sdk.resources.music import Music
 from minimax_sdk.resources.speech import Speech
+from minimax_sdk.resources.text import Text
 from minimax_sdk.resources.video import Video
 from minimax_sdk.resources.voice import Voice
 
@@ -36,6 +37,7 @@ class TestClientInitialisation:
     def test_client_with_api_key_creates_resources(
         self, minimax_client: MiniMax
     ) -> None:
+        assert hasattr(minimax_client, "text")
         assert hasattr(minimax_client, "speech")
         assert hasattr(minimax_client, "voice")
         assert hasattr(minimax_client, "video")
@@ -48,6 +50,9 @@ class TestClientInitialisation:
 
 
 class TestResourceTypes:
+    def test_text_resource_type(self, minimax_client: MiniMax) -> None:
+        assert isinstance(minimax_client.text, Text)
+
     def test_speech_resource_type(self, minimax_client: MiniMax) -> None:
         assert isinstance(minimax_client.speech, Speech)
 
@@ -155,6 +160,7 @@ from minimax_sdk.resources.files import AsyncFiles
 from minimax_sdk.resources.image import AsyncImage
 from minimax_sdk.resources.music import AsyncMusic
 from minimax_sdk.resources.speech import AsyncSpeech
+from minimax_sdk.resources.text import AsyncText
 from minimax_sdk.resources.video import AsyncVideo
 from minimax_sdk.resources.voice import AsyncVoice
 
@@ -172,6 +178,7 @@ class TestAsyncMiniMaxInitialisation:
     ) -> None:
         monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
         client = AsyncMiniMax(api_key="sk-test-async")
+        assert isinstance(client.text, AsyncText)
         assert isinstance(client.speech, AsyncSpeech)
         assert isinstance(client.voice, AsyncVoice)
         assert isinstance(client.video, AsyncVideo)

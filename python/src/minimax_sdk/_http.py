@@ -16,6 +16,7 @@ from typing import Any, BinaryIO
 import httpx
 
 from minimax_sdk.exceptions import (
+    ANTHROPIC_ERROR_TYPE_MAP,
     ERROR_CODE_MAP,
     RETRYABLE_CODES,
     MiniMaxError,
@@ -55,6 +56,22 @@ def _backoff_delay(attempt: int, *, base: float = _DEFAULT_BASE_DELAY) -> float:
 
 def _should_retry(code: int) -> bool:
     return code in RETRYABLE_CODES
+
+
+# ── Anthropic-compatible helpers ─────────────────────────────────────────────
+
+_ANTHROPIC_RETRYABLE_STATUS: set[int] = {429, 500, 529}
+
+
+def _raise_anthropic_error(response: httpx.Response, body: dict[str, Any]) -> None:
+    """Raise a mapped MiniMaxError from an Anthropic-format error response."""
+    error = body.get("error", {})
+    error_type = error.get("type", "api_error")
+    message = error.get("message", "Unknown error")
+    request_id = body.get("request_id", "")
+
+    exc_cls = ANTHROPIC_ERROR_TYPE_MAP.get(error_type, MiniMaxError)
+    raise exc_cls(message, code=response.status_code, trace_id=request_id)
 
 
 def _retry_after_seconds(response: httpx.Response) -> float | None:
@@ -177,6 +194,85 @@ class HttpClient:
             _raise_for_status(body)
 
         # Should not reach here, but just in case:
+        if last_exc is not None:
+            raise MiniMaxError(
+                f"Request failed after {self.max_retries + 1} attempts: {last_exc}",
+                code=0,
+                trace_id="",
+            ) from last_exc
+        raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
+
+    # ── Anthropic-compatible request ─────────────────────────────────────
+
+    def request_anthropic(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Send an HTTP request to an Anthropic-compatible endpoint.
+
+        Unlike :meth:`request`, this handles Anthropic-format error responses
+        (HTTP status codes + ``{"type": "error", "error": {...}}``) instead
+        of MiniMax's ``base_resp`` format.
+
+        Retries automatically on HTTP 429, 500, and 529.
+        """
+        logger.debug("%s %s (anthropic)", method, path)
+        last_exc: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self._client.request(method, path, **kwargs)
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                if attempt < self.max_retries:
+                    time.sleep(_backoff_delay(attempt))
+                    continue
+                raise MiniMaxError(
+                    f"HTTP transport error: {exc}",
+                    code=0,
+                    trace_id="",
+                ) from exc
+
+            if response.status_code == 200:
+                body: dict[str, Any] = response.json()
+                logger.debug("%s %s -> 200 OK (anthropic)", method, path)
+                return body
+
+            # Retryable HTTP status
+            if (
+                response.status_code in _ANTHROPIC_RETRYABLE_STATUS
+                and attempt < self.max_retries
+            ):
+                delay = _backoff_delay(attempt)
+                if response.status_code == 429:
+                    retry_after = _retry_after_seconds(response)
+                    if retry_after is not None:
+                        delay = retry_after
+                logger.debug(
+                    "%s %s -> HTTP %d, retrying in %.1fs (attempt %d/%d)",
+                    method,
+                    path,
+                    response.status_code,
+                    delay,
+                    attempt + 1,
+                    self.max_retries,
+                )
+                time.sleep(delay)
+                continue
+
+            # Non-retryable error or retries exhausted
+            try:
+                body = response.json()
+            except Exception:
+                raise MiniMaxError(
+                    f"HTTP {response.status_code}: {response.text}",
+                    code=response.status_code,
+                    trace_id="",
+                )
+            _raise_anthropic_error(response, body)
+
         if last_exc is not None:
             raise MiniMaxError(
                 f"Request failed after {self.max_retries + 1} attempts: {last_exc}",
@@ -388,6 +484,85 @@ class AsyncHttpClient:
                 continue
 
             _raise_for_status(body)
+
+        if last_exc is not None:
+            raise MiniMaxError(
+                f"Request failed after {self.max_retries + 1} attempts: {last_exc}",
+                code=0,
+                trace_id="",
+            ) from last_exc
+        raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
+
+    # ── Anthropic-compatible request ─────────────────────────────────────
+
+    async def request_anthropic(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Send an async HTTP request to an Anthropic-compatible endpoint.
+
+        Unlike :meth:`request`, this handles Anthropic-format error responses
+        (HTTP status codes + ``{"type": "error", "error": {...}}``) instead
+        of MiniMax's ``base_resp`` format.
+
+        Retries automatically on HTTP 429, 500, and 529.
+        """
+        logger.debug("%s %s (anthropic)", method, path)
+        last_exc: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = await self._client.request(method, path, **kwargs)
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                if attempt < self.max_retries:
+                    await asyncio.sleep(_backoff_delay(attempt))
+                    continue
+                raise MiniMaxError(
+                    f"HTTP transport error: {exc}",
+                    code=0,
+                    trace_id="",
+                ) from exc
+
+            if response.status_code == 200:
+                body: dict[str, Any] = response.json()
+                logger.debug("%s %s -> 200 OK (anthropic)", method, path)
+                return body
+
+            # Retryable HTTP status
+            if (
+                response.status_code in _ANTHROPIC_RETRYABLE_STATUS
+                and attempt < self.max_retries
+            ):
+                delay = _backoff_delay(attempt)
+                if response.status_code == 429:
+                    retry_after = _retry_after_seconds(response)
+                    if retry_after is not None:
+                        delay = retry_after
+                logger.debug(
+                    "%s %s -> HTTP %d, retrying in %.1fs (attempt %d/%d)",
+                    method,
+                    path,
+                    response.status_code,
+                    delay,
+                    attempt + 1,
+                    self.max_retries,
+                )
+                await asyncio.sleep(delay)
+                continue
+
+            # Non-retryable error or retries exhausted
+            try:
+                body = response.json()
+            except Exception:
+                raise MiniMaxError(
+                    f"HTTP {response.status_code}: {response.text}",
+                    code=response.status_code,
+                    trace_id="",
+                )
+            _raise_anthropic_error(response, body)
 
         if last_exc is not None:
             raise MiniMaxError(
