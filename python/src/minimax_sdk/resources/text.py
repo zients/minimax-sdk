@@ -299,9 +299,7 @@ class Text(SyncResource):
         )
         body["stream"] = True
 
-        raw_lines = self._http.stream_request_anthropic(
-            "POST", _MESSAGES_PATH, json=body
-        )
+        raw_lines = self._http.stream_request_anthropic("POST", _MESSAGES_PATH, json=body)
         yield from _parse_sse_events(raw_lines)
 
 
@@ -425,8 +423,6 @@ class AsyncText(AsyncResource):
         )
         body["stream"] = True
 
-        raw_lines = self._http.stream_request_anthropic(
-            "POST", _MESSAGES_PATH, json=body
-        )
+        raw_lines = self._http.stream_request_anthropic("POST", _MESSAGES_PATH, json=body)
         async for event in _parse_sse_events_async(raw_lines):
             yield event

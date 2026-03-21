@@ -241,10 +241,7 @@ class HttpClient:
                 return body
 
             # Retryable HTTP status
-            if (
-                response.status_code in _ANTHROPIC_RETRYABLE_STATUS
-                and attempt < self.max_retries
-            ):
+            if response.status_code in _ANTHROPIC_RETRYABLE_STATUS and attempt < self.max_retries:
                 delay = _backoff_delay(attempt)
                 if response.status_code == 429:
                     retry_after = _retry_after_seconds(response)
@@ -564,10 +561,7 @@ class AsyncHttpClient:
                 return body
 
             # Retryable HTTP status
-            if (
-                response.status_code in _ANTHROPIC_RETRYABLE_STATUS
-                and attempt < self.max_retries
-            ):
+            if response.status_code in _ANTHROPIC_RETRYABLE_STATUS and attempt < self.max_retries:
                 delay = _backoff_delay(attempt)
                 if response.status_code == 429:
                     retry_after = _retry_after_seconds(response)
