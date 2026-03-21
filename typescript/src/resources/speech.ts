@@ -283,8 +283,10 @@ export class Speech extends APIResource {
     });
 
     await new Promise<void>((resolve, reject) => {
-      ws.once("open", resolve);
-      ws.once("error", reject);
+      const onOpen = () => { ws.off("error", onError); resolve(); };
+      const onError = (e: Error) => { ws.off("open", onOpen); reject(e); };
+      ws.once("open", onOpen);
+      ws.once("error", onError);
     });
 
     const conn = new SpeechConnection(ws, config);
@@ -458,16 +460,29 @@ export class SpeechConnection {
     this._ws.send(JSON.stringify(startMsg));
 
     return new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        this._ws.off("message", handler);
+        this._ws.off("close", onClose);
+        this._ws.off("error", onError);
+      };
+      const onClose = () => {
+        cleanup();
+        reject(new Error("WebSocket closed during task_start"));
+      };
+      const onError = (err: Error) => {
+        cleanup();
+        reject(err);
+      };
       const handler = (raw: import("ws").RawData) => {
         try {
           const msg = parseWSMessage(raw.toString());
           const event = String(msg.event ?? "");
           if (event === "task_started") {
             this.sessionId = String(msg.session_id ?? "");
-            this._ws.off("message", handler);
+            cleanup();
             resolve();
           } else if (event === "task_failed") {
-            this._ws.off("message", handler);
+            cleanup();
             const base = (msg.base_resp ?? {}) as Record<string, unknown>;
             reject(
               new MiniMaxError(
@@ -478,11 +493,13 @@ export class SpeechConnection {
             );
           }
         } catch (err) {
-          this._ws.off("message", handler);
+          cleanup();
           reject(err);
         }
       };
       this._ws.on("message", handler);
+      this._ws.once("close", onClose);
+      this._ws.once("error", onError);
     });
   }
 
@@ -501,6 +518,19 @@ export class SpeechConnection {
     let extraInfo: Record<string, unknown> = {};
 
     return new Promise<AudioResponse>((resolve, reject) => {
+      const cleanup = () => {
+        this._ws.off("message", handler);
+        this._ws.off("close", onClose);
+        this._ws.off("error", onError);
+      };
+      const onClose = () => {
+        cleanup();
+        reject(new Error("WebSocket closed unexpectedly"));
+      };
+      const onError = (err: Error) => {
+        cleanup();
+        reject(err);
+      };
       const handler = (raw: import("ws").RawData) => {
         try {
           const msg = parseWSMessage(raw.toString());
@@ -513,11 +543,11 @@ export class SpeechConnection {
             if (msg.extra_info)
               extraInfo = msg.extra_info as Record<string, unknown>;
             if (msg.is_final) {
-              this._ws.off("message", handler);
+              cleanup();
               resolve(audioResponseFromWSChunks(hexChunks, extraInfo));
             }
           } else if (event === "task_failed") {
-            this._ws.off("message", handler);
+            cleanup();
             const base = (msg.base_resp ?? {}) as Record<string, unknown>;
             reject(
               new MiniMaxError(
@@ -528,11 +558,13 @@ export class SpeechConnection {
             );
           }
         } catch (err) {
-          this._ws.off("message", handler);
+          cleanup();
           reject(err);
         }
       };
       this._ws.on("message", handler);
+      this._ws.once("close", onClose);
+      this._ws.once("error", onError);
     });
   }
 
@@ -610,23 +642,26 @@ export class SpeechConnection {
     try {
       this._ws.send(JSON.stringify({ event: "task_finish" }));
       await new Promise<void>((resolve) => {
+        const cleanup = () => {
+          clearTimeout(timer);
+          this._ws.off("message", handler);
+        };
         const handler = (raw: import("ws").RawData) => {
           try {
             const msg = parseWSMessage(raw.toString());
             const event = String(msg.event ?? "");
             if (event === "task_finished" || event === "task_failed") {
-              this._ws.off("message", handler);
+              cleanup();
               resolve();
             }
           } catch {
-            this._ws.off("message", handler);
+            cleanup();
             resolve();
           }
         };
         this._ws.on("message", handler);
-        // Timeout fallback
-        setTimeout(() => {
-          this._ws.off("message", handler);
+        const timer = setTimeout(() => {
+          cleanup();
           resolve();
         }, 5000);
       });
