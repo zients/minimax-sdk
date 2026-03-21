@@ -31,7 +31,7 @@ class TestTextCreate:
     def test_create_simple(self, client: MiniMax):
         """Simple single-turn text generation."""
         result = client.text.create(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "Say hello in one word."}],
             max_tokens=256,
         )
@@ -49,7 +49,7 @@ class TestTextCreate:
     def test_create_with_system(self, client: MiniMax):
         """Text generation with system prompt."""
         result = client.text.create(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "What is 2+2? Reply with only the number."}],
             max_tokens=256,
             system="You are a math tutor. Answer concisely with just the number.",
@@ -62,7 +62,7 @@ class TestTextCreate:
     def test_create_multi_turn(self, client: MiniMax):
         """Multi-turn conversation."""
         result = client.text.create(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[
                 {"role": "user", "content": "My name is Alice."},
                 {"role": "assistant", "content": "Hello Alice!"},
@@ -78,7 +78,7 @@ class TestTextCreate:
     def test_create_with_temperature(self, client: MiniMax):
         """Text generation with temperature parameter."""
         result = client.text.create(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "Say yes."}],
             max_tokens=8,
             temperature=0.1,
@@ -97,7 +97,7 @@ class TestTextCreateStream:
         event_types = set()
 
         for event in client.text.create_stream(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "Say hi in one word."}],
             max_tokens=256,
         ):
@@ -114,7 +114,7 @@ class TestTextCreateStream:
         """Streaming with system prompt."""
         collected = ""
         for event in client.text.create_stream(
-            model="MiniMax-M2.5",
+            model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "What is 1+1? Reply with only the number."}],
             max_tokens=256,
             system="Answer with just the number.",
