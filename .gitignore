@@ -1,0 +1,17 @@
+.env
+.firecrawl/
+__pycache__/
+*.pyc
+*.pyo
+.ruff_cache/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+.venv/
+uv.lock
+.coverage
+.claude/
+.DS_Store
+python/tests/integration/outputs/
+docs/specs/
