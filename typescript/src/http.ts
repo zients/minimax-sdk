@@ -501,7 +501,8 @@ export class HttpClient {
     purpose: string,
   ): Promise<Record<string, unknown>> {
     const formData = new FormData();
-    const blob = file instanceof Blob ? file : new Blob([file]);
+    const blob =
+      file instanceof Blob ? file : new Blob([new Uint8Array(file)]);
     formData.append("file", blob, filename);
     formData.append("purpose", purpose);
 

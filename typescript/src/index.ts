@@ -80,6 +80,7 @@ export type {
 
 // Video types
 export type {
+  SubjectReference,
   VideoCreateParams,
   VideoResult,
 } from "./resources/video.js";
@@ -94,6 +95,7 @@ export type {
 // Music types
 export type {
   MusicGenerateParams,
+  MusicGenerateStreamParams,
   LyricsGenerateParams,
   LyricsResult,
 } from "./resources/music.js";

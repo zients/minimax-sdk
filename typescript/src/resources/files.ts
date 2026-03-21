@@ -62,10 +62,10 @@ export class Files extends APIResource {
 
     if (typeof file === "string") {
       const data = await readFile(file);
-      blob = new Blob([data]);
+      blob = new Blob([new Uint8Array(data)]);
       filename = basename(file);
     } else if (Buffer.isBuffer(file)) {
-      blob = new Blob([file]);
+      blob = new Blob([new Uint8Array(file)]);
       filename = "upload";
     } else {
       blob = file;

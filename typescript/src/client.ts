@@ -53,8 +53,9 @@ export class MiniMax {
   readonly _httpClient: HttpClient;
 
   constructor(options: ClientOptions = {}) {
-    const apiKey =
-      options.apiKey ?? process.env.MINIMAX_API_KEY ?? "";
+    const env =
+      typeof process !== "undefined" && process.env ? process.env : {};
+    const apiKey = options.apiKey ?? env.MINIMAX_API_KEY ?? "";
     if (!apiKey) {
       throw new Error(
         "MiniMax API key is required. Provide it via the 'apiKey' option " +
@@ -62,10 +63,7 @@ export class MiniMax {
       );
     }
 
-    const baseURL =
-      options.baseURL ??
-      process.env.MINIMAX_BASE_URL ??
-      DEFAULT_BASE_URL;
+    const baseURL = options.baseURL ?? env.MINIMAX_BASE_URL ?? DEFAULT_BASE_URL;
 
     this.pollInterval = options.pollInterval ?? DEFAULT_POLL_INTERVAL;
     this.pollTimeout = options.pollTimeout ?? DEFAULT_POLL_TIMEOUT;

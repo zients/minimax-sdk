@@ -5,8 +5,6 @@
  * matching the Python SDK's _audio.py.
  */
 
-import { writeFile } from "node:fs/promises";
-
 // ── Hex decoding ────────────────────────────────────────────────────────────
 
 export function decodeHexAudio(hex: string): Buffer {
@@ -39,6 +37,7 @@ export class AudioResponse {
   }
 
   async save(path: string): Promise<void> {
+    const { writeFile } = await import("node:fs/promises");
     await writeFile(path, this.data);
   }
 

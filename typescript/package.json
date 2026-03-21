@@ -48,10 +48,8 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "ws": "^8.0.0"
-  },
   "devDependencies": {
+    "ws": "^8.0.0",
     "@types/node": "^20.0.0",
     "@types/ws": "^8.0.0",
     "@vitest/coverage-v8": "^3.2.4",

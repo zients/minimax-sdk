@@ -234,19 +234,19 @@ describe("Files", () => {
         "POST",
         "/v1/files/delete",
         {
-          json: { file_id: "12345", purpose: "voice_clone" },
+          json: { file_id: 12345, purpose: "voice_clone" },
         },
       );
     });
 
-    it("passes file_id as string in the body", async () => {
+    it("converts file_id to number in the body", async () => {
       mockClient.request.mockResolvedValue({});
 
       await files.delete("99999", "prompt_audio");
 
       const body = mockClient.request.mock.calls[0]![2].json;
-      expect(body.file_id).toBe("99999");
-      expect(typeof body.file_id).toBe("string");
+      expect(body.file_id).toBe(99999);
+      expect(typeof body.file_id).toBe("number");
     });
 
     it("returns void (no value)", async () => {
