@@ -1365,3 +1365,151 @@ class TestAsyncHttpClientRequestAnthropic:
 
         with pytest.raises(MiniMaxError, match="HTTP 502"):
             await client.request_anthropic("POST", "/anthropic/v1/messages", json={})
+
+
+# ── HttpClient.stream_request_anthropic() ────────────────────────────────────
+
+
+class TestHttpClientStreamRequestAnthropic:
+    def test_success_yields_lines(self) -> None:
+        client = HttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 200
+        mock_response.iter_lines.return_value = iter(["line1", "line2"])
+
+        class StreamCM:
+            def __enter__(self):
+                return mock_response
+
+            def __exit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = StreamCM()
+
+        lines = list(client.stream_request_anthropic("POST", "/anthropic/v1/messages", json={}))
+        assert lines == ["line1", "line2"]
+
+    def test_http_error_raises(self) -> None:
+        client = HttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            "type": "error",
+            "error": {"type": "authentication_error", "message": "Bad key"},
+        }
+
+        class StreamCM:
+            def __enter__(self):
+                return mock_response
+
+            def __exit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = StreamCM()
+
+        with pytest.raises(AuthError):
+            list(client.stream_request_anthropic("POST", "/anthropic/v1/messages", json={}))
+
+    def test_non_json_error_raises(self) -> None:
+        client = HttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 502
+        mock_response.text = "Bad Gateway"
+        mock_response.json.side_effect = ValueError("No JSON")
+
+        class StreamCM:
+            def __enter__(self):
+                return mock_response
+
+            def __exit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = StreamCM()
+
+        with pytest.raises(MiniMaxError, match="HTTP 502"):
+            list(client.stream_request_anthropic("POST", "/anthropic/v1/messages", json={}))
+
+
+# ── AsyncHttpClient.stream_request_anthropic() ──────────────────────────────
+
+
+class TestAsyncHttpClientStreamRequestAnthropic:
+    @pytest.mark.asyncio
+    async def test_success_yields_lines(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 200
+
+        async def _aiter_lines():
+            for line in ["line1", "line2"]:
+                yield line
+
+        mock_response.aiter_lines = _aiter_lines
+
+        class AsyncStreamCM:
+            async def __aenter__(self):
+                return mock_response
+
+            async def __aexit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = AsyncStreamCM()
+
+        lines = [line async for line in client.stream_request_anthropic(
+            "POST", "/anthropic/v1/messages", json={}
+        )]
+        assert lines == ["line1", "line2"]
+
+    @pytest.mark.asyncio
+    async def test_http_error_raises(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 429
+        mock_response.json.return_value = {
+            "type": "error",
+            "error": {"type": "rate_limit_error", "message": "Rate limited"},
+        }
+
+        class AsyncStreamCM:
+            async def __aenter__(self):
+                return mock_response
+
+            async def __aexit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = AsyncStreamCM()
+
+        with pytest.raises(RateLimitError):
+            async for _ in client.stream_request_anthropic(
+                "POST", "/anthropic/v1/messages", json={}
+            ):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_non_json_error_raises(self) -> None:
+        client = AsyncHttpClient(api_key="sk-key")
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 503
+        mock_response.text = "Service Unavailable"
+        mock_response.json.side_effect = ValueError("No JSON")
+
+        class AsyncStreamCM:
+            async def __aenter__(self):
+                return mock_response
+
+            async def __aexit__(self, *args):
+                pass
+
+        client._client = MagicMock()
+        client._client.stream.return_value = AsyncStreamCM()
+
+        with pytest.raises(MiniMaxError, match="HTTP 503"):
+            async for _ in client.stream_request_anthropic(
+                "POST", "/anthropic/v1/messages", json={}
+            ):
+                pass

@@ -2,16 +2,35 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from minimax_sdk.resources.text import AsyncText, Text, _build_messages_body, _parse_message
+from minimax_sdk.exceptions import MiniMaxError
+from minimax_sdk.resources.text import (
+    AsyncText,
+    Text,
+    _build_messages_body,
+    _parse_message,
+    _parse_sse_events,
+    _parse_sse_events_async,
+)
 from minimax_sdk.types.text import (
+    ContentBlockDeltaEvent,
+    ContentBlockStartEvent,
+    ContentBlockStopEvent,
+    InputJsonDelta,
     Message,
+    MessageDeltaEvent,
+    MessageStartEvent,
+    MessageStopEvent,
+    SignatureDelta,
     TextBlock,
+    TextDelta,
     ThinkingBlock,
+    ThinkingDelta,
     ToolUseBlock,
     Usage,
 )
@@ -485,3 +504,468 @@ class TestAsyncTextCreate:
         assert result.stop_reason == "tool_use"
         assert isinstance(result.content[0], ToolUseBlock)
         assert result.content[0].name == "search"
+
+
+# ── SSE parser tests ────────────────────────────────────────────────────────
+
+
+def _sse_line(event_type: str, data: dict[str, Any]) -> list[str]:
+    """Build SSE lines for a single event (event: + data: + blank)."""
+    return [f"event: {event_type}", f"data: {json.dumps(data)}", ""]
+
+
+def _simple_text_stream_lines() -> list[str]:
+    """Build a minimal SSE stream: message_start → text block → message_stop."""
+    lines: list[str] = []
+    lines.extend(_sse_line("message_start", {
+        "type": "message_start",
+        "message": {
+            "id": "msg_stream_001",
+            "type": "message",
+            "role": "assistant",
+            "content": [],
+            "model": "MiniMax-M2.7",
+            "stop_reason": None,
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 1},
+        },
+    }))
+    lines.extend(_sse_line("content_block_start", {
+        "type": "content_block_start",
+        "index": 0,
+        "content_block": {"type": "text", "text": ""},
+    }))
+    lines.extend(_sse_line("content_block_delta", {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": "Hello"},
+    }))
+    lines.extend(_sse_line("content_block_delta", {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": " world!"},
+    }))
+    lines.extend(_sse_line("content_block_stop", {
+        "type": "content_block_stop",
+        "index": 0,
+    }))
+    lines.extend(_sse_line("message_delta", {
+        "type": "message_delta",
+        "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+        "usage": {"output_tokens": 5},
+    }))
+    lines.extend(_sse_line("message_stop", {"type": "message_stop"}))
+    return lines
+
+
+class TestParseSSEEvents:
+    """Tests for the SSE event parser."""
+
+    def test_simple_text_stream(self):
+        lines = _simple_text_stream_lines()
+        events = list(_parse_sse_events(iter(lines)))
+
+        assert len(events) == 7
+        assert isinstance(events[0], MessageStartEvent)
+        assert events[0].message.id == "msg_stream_001"
+        assert isinstance(events[1], ContentBlockStartEvent)
+        assert events[1].index == 0
+        assert isinstance(events[1].content_block, TextBlock)
+        assert isinstance(events[2], ContentBlockDeltaEvent)
+        assert isinstance(events[2].delta, TextDelta)
+        assert events[2].delta.text == "Hello"
+        assert isinstance(events[3], ContentBlockDeltaEvent)
+        assert events[3].delta.text == " world!"
+        assert isinstance(events[4], ContentBlockStopEvent)
+        assert events[4].index == 0
+        assert isinstance(events[5], MessageDeltaEvent)
+        assert events[5].delta.stop_reason == "end_turn"
+        assert events[5].usage.output_tokens == 5
+        assert isinstance(events[6], MessageStopEvent)
+
+    def test_tool_use_stream(self):
+        lines: list[str] = []
+        lines.extend(_sse_line("message_start", {
+            "type": "message_start",
+            "message": {
+                "id": "msg_tool", "type": "message", "role": "assistant",
+                "content": [], "model": "MiniMax-M2.7",
+                "stop_reason": None, "stop_sequence": None,
+                "usage": {"input_tokens": 10, "output_tokens": 1},
+            },
+        }))
+        lines.extend(_sse_line("content_block_start", {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {
+                "type": "tool_use", "id": "toolu_01", "name": "get_weather", "input": {},
+            },
+        }))
+        lines.extend(_sse_line("content_block_delta", {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "input_json_delta", "partial_json": '{"loc'},
+        }))
+        lines.extend(_sse_line("content_block_delta", {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "input_json_delta", "partial_json": 'ation": "SF"}'},
+        }))
+        lines.extend(_sse_line("content_block_stop", {
+            "type": "content_block_stop", "index": 0,
+        }))
+        lines.extend(_sse_line("message_delta", {
+            "type": "message_delta",
+            "delta": {"stop_reason": "tool_use"},
+            "usage": {"output_tokens": 10},
+        }))
+        lines.extend(_sse_line("message_stop", {"type": "message_stop"}))
+
+        events = list(_parse_sse_events(iter(lines)))
+
+        assert isinstance(events[1].content_block, ToolUseBlock)
+        assert events[1].content_block.name == "get_weather"
+        assert isinstance(events[2].delta, InputJsonDelta)
+        assert events[2].delta.partial_json == '{"loc'
+        assert isinstance(events[3].delta, InputJsonDelta)
+        assert events[5].delta.stop_reason == "tool_use"
+
+    def test_thinking_stream(self):
+        lines: list[str] = []
+        lines.extend(_sse_line("message_start", {
+            "type": "message_start",
+            "message": {
+                "id": "msg_think", "type": "message", "role": "assistant",
+                "content": [], "model": "MiniMax-M2.7",
+                "stop_reason": None, "stop_sequence": None,
+                "usage": {"input_tokens": 10, "output_tokens": 1},
+            },
+        }))
+        lines.extend(_sse_line("content_block_start", {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {"type": "thinking", "thinking": "", "signature": ""},
+        }))
+        lines.extend(_sse_line("content_block_delta", {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "thinking_delta", "thinking": "Step 1..."},
+        }))
+        lines.extend(_sse_line("content_block_delta", {
+            "type": "content_block_delta",
+            "index": 0,
+            "delta": {"type": "signature_delta", "signature": "sig_abc"},
+        }))
+        lines.extend(_sse_line("content_block_stop", {
+            "type": "content_block_stop", "index": 0,
+        }))
+        lines.extend(_sse_line("message_delta", {
+            "type": "message_delta",
+            "delta": {"stop_reason": "end_turn"},
+            "usage": {"output_tokens": 20},
+        }))
+        lines.extend(_sse_line("message_stop", {"type": "message_stop"}))
+
+        events = list(_parse_sse_events(iter(lines)))
+
+        assert isinstance(events[1].content_block, ThinkingBlock)
+        assert isinstance(events[2].delta, ThinkingDelta)
+        assert events[2].delta.thinking == "Step 1..."
+        assert isinstance(events[3].delta, SignatureDelta)
+        assert events[3].delta.signature == "sig_abc"
+
+    def test_ping_events_skipped(self):
+        lines: list[str] = []
+        lines.extend(_sse_line("message_start", {
+            "type": "message_start",
+            "message": {
+                "id": "msg_ping", "type": "message", "role": "assistant",
+                "content": [], "model": "MiniMax-M2.7",
+                "stop_reason": None, "stop_sequence": None,
+                "usage": {"input_tokens": 5, "output_tokens": 1},
+            },
+        }))
+        lines.extend(_sse_line("ping", {"type": "ping"}))
+        lines.extend(_sse_line("message_stop", {"type": "message_stop"}))
+
+        events = list(_parse_sse_events(iter(lines)))
+        assert len(events) == 2  # ping skipped
+        assert isinstance(events[0], MessageStartEvent)
+        assert isinstance(events[1], MessageStopEvent)
+
+    def test_error_event_raises(self):
+        lines: list[str] = []
+        lines.extend(_sse_line("error", {
+            "type": "error",
+            "error": {"type": "overloaded_error", "message": "Overloaded"},
+        }))
+
+        with pytest.raises(MiniMaxError, match="Overloaded"):
+            list(_parse_sse_events(iter(lines)))
+
+    def test_unknown_event_skipped(self):
+        lines: list[str] = []
+        lines.extend(_sse_line("message_start", {
+            "type": "message_start",
+            "message": {
+                "id": "msg_unk", "type": "message", "role": "assistant",
+                "content": [], "model": "MiniMax-M2.7",
+                "stop_reason": None, "stop_sequence": None,
+                "usage": {"input_tokens": 5, "output_tokens": 1},
+            },
+        }))
+        lines.extend(_sse_line("unknown_future_event", {
+            "type": "unknown_future_event", "data": "something",
+        }))
+        lines.extend(_sse_line("message_stop", {"type": "message_stop"}))
+
+        events = list(_parse_sse_events(iter(lines)))
+        assert len(events) == 2  # unknown skipped
+
+    def test_trailing_event_without_empty_line(self):
+        """Last event without trailing blank line should still be parsed."""
+        lines = [
+            "event: message_stop",
+            f"data: {json.dumps({'type': 'message_stop'})}",
+            # No trailing empty line
+        ]
+        events = list(_parse_sse_events(iter(lines)))
+        assert len(events) == 1
+        assert isinstance(events[0], MessageStopEvent)
+
+    def test_trailing_error_without_empty_line(self):
+        """Error event at end without trailing blank line should raise."""
+        lines = [
+            "event: error",
+            f"data: {json.dumps({'type': 'error', 'error': {'type': 'api_error', 'message': 'Boom'}})}",
+        ]
+        with pytest.raises(MiniMaxError, match="Boom"):
+            list(_parse_sse_events(iter(lines)))
+
+    def test_trailing_unknown_event_skipped(self):
+        """Unknown event at end without trailing blank line should be skipped."""
+        lines = [
+            "event: future_event",
+            f"data: {json.dumps({'type': 'future_event', 'x': 1})}",
+        ]
+        events = list(_parse_sse_events(iter(lines)))
+        assert len(events) == 0
+
+
+# ── Async SSE parser tests ──────────────────────────────────────────────────
+
+
+class TestParseSSEEventsAsync:
+    """Tests for the async SSE event parser."""
+
+    @pytest.mark.asyncio
+    async def test_simple_text_stream(self):
+        lines = _simple_text_stream_lines()
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        events = [event async for event in _parse_sse_events_async(_async_iter())]
+        assert len(events) == 7
+        assert isinstance(events[0], MessageStartEvent)
+        assert isinstance(events[2], ContentBlockDeltaEvent)
+        assert isinstance(events[2].delta, TextDelta)
+        assert events[2].delta.text == "Hello"
+
+    @pytest.mark.asyncio
+    async def test_error_event_raises(self):
+        lines = _sse_line("error", {
+            "type": "error",
+            "error": {"type": "api_error", "message": "Internal"},
+        })
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        with pytest.raises(MiniMaxError, match="Internal"):
+            async for _ in _parse_sse_events_async(_async_iter()):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_ping_skipped(self):
+        lines = _sse_line("ping", {"type": "ping"}) + _sse_line(
+            "message_stop", {"type": "message_stop"}
+        )
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        events = [event async for event in _parse_sse_events_async(_async_iter())]
+        assert len(events) == 1
+        assert isinstance(events[0], MessageStopEvent)
+
+    @pytest.mark.asyncio
+    async def test_trailing_error_raises(self):
+        lines = [
+            "event: error",
+            f"data: {json.dumps({'type': 'error', 'error': {'message': 'Fail'}})}",
+        ]
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        with pytest.raises(MiniMaxError, match="Fail"):
+            async for _ in _parse_sse_events_async(_async_iter()):
+                pass
+
+    @pytest.mark.asyncio
+    async def test_trailing_unknown_skipped(self):
+        lines = [
+            "event: x",
+            f"data: {json.dumps({'type': 'x'})}",
+        ]
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        events = [event async for event in _parse_sse_events_async(_async_iter())]
+        assert len(events) == 0
+
+    @pytest.mark.asyncio
+    async def test_trailing_event_without_empty_line(self):
+        lines = [
+            "event: message_stop",
+            f"data: {json.dumps({'type': 'message_stop'})}",
+        ]
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        events = [event async for event in _parse_sse_events_async(_async_iter())]
+        assert len(events) == 1
+        assert isinstance(events[0], MessageStopEvent)
+
+
+# ── Text.create_stream() tests ──────────────────────────────────────────────
+
+
+class TestTextCreateStream:
+    """Tests for sync Text.create_stream()."""
+
+    def test_create_stream_basic(self):
+        text, mock_http = _make_text_resource()
+        mock_http.stream_request_anthropic.return_value = iter(
+            _simple_text_stream_lines()
+        )
+
+        events = list(text.create_stream(
+            model="MiniMax-M2.7",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=1024,
+        ))
+
+        assert len(events) == 7
+        assert isinstance(events[0], MessageStartEvent)
+
+        # Verify stream=True was set
+        call_args = mock_http.stream_request_anthropic.call_args
+        assert call_args[0] == ("POST", "/anthropic/v1/messages")
+        body = call_args[1]["json"]
+        assert body["stream"] is True
+        assert body["model"] == "MiniMax-M2.7"
+
+    def test_create_stream_collects_text(self):
+        text, mock_http = _make_text_resource()
+        mock_http.stream_request_anthropic.return_value = iter(
+            _simple_text_stream_lines()
+        )
+
+        collected = ""
+        for event in text.create_stream(
+            model="MiniMax-M2.7",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=1024,
+        ):
+            if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                collected += event.delta.text
+
+        assert collected == "Hello world!"
+
+    def test_create_stream_with_all_params(self):
+        text, mock_http = _make_text_resource()
+        mock_http.stream_request_anthropic.return_value = iter(
+            _simple_text_stream_lines()
+        )
+
+        list(text.create_stream(
+            model="MiniMax-M2.5",
+            messages=[{"role": "user", "content": "Hi"}],
+            max_tokens=512,
+            system="Be brief.",
+            temperature=0.5,
+            top_p=0.8,
+            tools=[{"name": "t", "description": "d", "input_schema": {}}],
+            tool_choice={"type": "auto"},
+            thinking={"type": "enabled", "budget_tokens": 2000},
+            metadata={"user_id": "u1"},
+        ))
+
+        body = mock_http.stream_request_anthropic.call_args[1]["json"]
+        assert body["stream"] is True
+        assert body["system"] == "Be brief."
+        assert body["temperature"] == 0.5
+
+
+# ── AsyncText.create_stream() tests ─────────────────────────────────────────
+
+
+class TestAsyncTextCreateStream:
+    """Tests for async AsyncText.create_stream()."""
+
+    @pytest.mark.asyncio
+    async def test_create_stream_basic(self):
+        text, mock_http = _make_async_text_resource()
+        lines = _simple_text_stream_lines()
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        # Async generator returns AsyncIterator directly (no await), so use MagicMock
+        mock_http.stream_request_anthropic = MagicMock(return_value=_async_iter())
+
+        events = [event async for event in text.create_stream(
+            model="MiniMax-M2.7",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=1024,
+        )]
+
+        assert len(events) == 7
+        assert isinstance(events[0], MessageStartEvent)
+
+        call_args = mock_http.stream_request_anthropic.call_args
+        body = call_args[1]["json"]
+        assert body["stream"] is True
+
+    @pytest.mark.asyncio
+    async def test_create_stream_collects_text(self):
+        text, mock_http = _make_async_text_resource()
+        lines = _simple_text_stream_lines()
+
+        async def _async_iter():
+            for line in lines:
+                yield line
+
+        mock_http.stream_request_anthropic = MagicMock(return_value=_async_iter())
+
+        collected = ""
+        async for event in text.create_stream(
+            model="MiniMax-M2.7",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=1024,
+        ):
+            if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                collected += event.delta.text
+
+        assert collected == "Hello world!"

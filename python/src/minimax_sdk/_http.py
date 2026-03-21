@@ -281,6 +281,38 @@ class HttpClient:
             ) from last_exc
         raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
 
+    # ── Anthropic-compatible stream request ──────────────────────────────
+
+    def stream_request_anthropic(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        """Stream an HTTP request to an Anthropic-compatible endpoint.
+
+        Opens a streaming connection and yields response lines.  If the
+        server returns an HTTP error, the Anthropic-format error body is
+        parsed and the appropriate :class:`MiniMaxError` subclass is raised.
+
+        Unlike :meth:`request_anthropic`, this does **not** retry — streaming
+        responses cannot be safely retried mid-stream.
+        """
+        logger.debug("%s %s (anthropic stream)", method, path)
+        with self._client.stream(method, path, **kwargs) as response:
+            if response.status_code != 200:
+                response.read()
+                try:
+                    body: dict[str, Any] = response.json()
+                except Exception:
+                    raise MiniMaxError(
+                        f"HTTP {response.status_code}: {response.text}",
+                        code=response.status_code,
+                        trace_id="",
+                    )
+                _raise_anthropic_error(response, body)
+            yield from response.iter_lines()
+
     # ── Raw bytes request ────────────────────────────────────────────────
 
     def request_bytes(
@@ -571,6 +603,39 @@ class AsyncHttpClient:
                 trace_id="",
             ) from last_exc
         raise MiniMaxError("Request failed with unknown error", code=0, trace_id="")
+
+    # ── Anthropic-compatible stream request ──────────────────────────────
+
+    async def stream_request_anthropic(
+        self,
+        method: str,
+        path: str,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        """Stream an async HTTP request to an Anthropic-compatible endpoint.
+
+        Opens a streaming connection and yields response lines.  If the
+        server returns an HTTP error, the Anthropic-format error body is
+        parsed and the appropriate :class:`MiniMaxError` subclass is raised.
+
+        Unlike :meth:`request_anthropic`, this does **not** retry — streaming
+        responses cannot be safely retried mid-stream.
+        """
+        logger.debug("%s %s (anthropic stream)", method, path)
+        async with self._client.stream(method, path, **kwargs) as response:
+            if response.status_code != 200:
+                await response.aread()
+                try:
+                    body: dict[str, Any] = response.json()
+                except Exception:
+                    raise MiniMaxError(
+                        f"HTTP {response.status_code}: {response.text}",
+                        code=response.status_code,
+                        trace_id="",
+                    )
+                _raise_anthropic_error(response, body)
+            async for line in response.aiter_lines():
+                yield line
 
     # ── Raw bytes request ────────────────────────────────────────────────
 

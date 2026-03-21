@@ -34,9 +34,22 @@ from minimax_sdk.types.image import ImageResult, ImageSubjectReference
 from minimax_sdk.types.music import LyricsResult
 from minimax_sdk.types.text import (
     ContentBlock,
+    ContentBlockDeltaEvent,
+    ContentBlockStartEvent,
+    ContentBlockStopEvent,
+    Delta,
+    InputJsonDelta,
     Message,
+    MessageDelta,
+    MessageDeltaEvent,
+    MessageStartEvent,
+    MessageStopEvent,
+    SignatureDelta,
+    StreamEvent,
     TextBlock,
+    TextDelta,
     ThinkingBlock,
+    ThinkingDelta,
     ToolUseBlock,
     Usage,
 )
@@ -79,6 +92,20 @@ __all__ = [
     "ToolUseBlock",
     "ThinkingBlock",
     "Usage",
+    # Types — text streaming
+    "StreamEvent",
+    "MessageStartEvent",
+    "ContentBlockStartEvent",
+    "ContentBlockDeltaEvent",
+    "ContentBlockStopEvent",
+    "MessageDeltaEvent",
+    "MessageStopEvent",
+    "Delta",
+    "TextDelta",
+    "InputJsonDelta",
+    "ThinkingDelta",
+    "SignatureDelta",
+    "MessageDelta",
     # Types — video
     "VideoResult",
     # Types — image
