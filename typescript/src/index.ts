@@ -64,6 +64,9 @@ export type {
 export type {
   VoiceSetting,
   AudioSetting,
+  VoiceModify,
+  PronunciationDict,
+  TimbreWeight,
   TTSParams,
   AsyncCreateParams,
   AsyncGenerateParams,
@@ -72,6 +75,7 @@ export type {
 
 // Voice types
 export type {
+  ClonePrompt,
   VoiceCloneResult,
   VoiceDesignResult,
   VoiceInfo,
