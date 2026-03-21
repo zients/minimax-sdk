@@ -2,12 +2,12 @@
 
 Tests text generation via MiniMax's Anthropic-compatible endpoint.
 
-Run with: cd python && uv run pytest tests/integration/test_text.py -v
+Run with: cd python && uv run pytest tests/integration/test_text.py -v -s
 """
 
 import pytest
 
-from minimax_sdk import MiniMax, Message, TextBlock
+from minimax_sdk import MiniMax, Message, TextBlock, ThinkingBlock
 
 
 def _extract_text(result: Message) -> str:
@@ -18,6 +18,20 @@ def _extract_text(result: Message) -> str:
     """
     parts = [block.text for block in result.content if isinstance(block, TextBlock)]
     return "".join(parts)
+
+
+def _print_result(result: Message) -> None:
+    """Print a Message result for debugging."""
+    print(f"\n  model={result.model}  stop={result.stop_reason}  "
+          f"usage=({result.usage.input_tokens}in/{result.usage.output_tokens}out)")
+    for i, block in enumerate(result.content):
+        if isinstance(block, ThinkingBlock):
+            preview = block.thinking[:80].replace("\n", " ")
+            print(f"  [{i}] thinking: {preview}...")
+        elif isinstance(block, TextBlock):
+            print(f"  [{i}] text: {block.text}")
+        else:
+            print(f"  [{i}] {block.type}: ...")
 
 
 @pytest.fixture(scope="module")
@@ -36,6 +50,7 @@ class TestTextCreate:
             max_tokens=256,
         )
 
+        _print_result(result)
         assert isinstance(result, Message)
         assert result.id
         assert result.model
@@ -55,6 +70,7 @@ class TestTextCreate:
             system="You are a math tutor. Answer concisely with just the number.",
         )
 
+        _print_result(result)
         assert isinstance(result, Message)
         text = _extract_text(result)
         assert "4" in text
@@ -71,6 +87,7 @@ class TestTextCreate:
             max_tokens=256,
         )
 
+        _print_result(result)
         assert isinstance(result, Message)
         text = _extract_text(result).lower()
         assert "alice" in text
@@ -84,6 +101,7 @@ class TestTextCreate:
             temperature=0.1,
         )
 
+        _print_result(result)
         assert isinstance(result, Message)
         assert result.stop_reason in ("end_turn", "max_tokens")
 
@@ -96,6 +114,7 @@ class TestTextCreateStream:
         collected = ""
         event_types = set()
 
+        print()
         for event in client.text.create_stream(
             model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "Say hi in one word."}],
@@ -104,6 +123,8 @@ class TestTextCreateStream:
             event_types.add(event.type)
             if event.type == "content_block_delta" and event.delta.type == "text_delta":
                 collected += event.delta.text
+                print(event.delta.text, end="", flush=True)
+        print(f"\n  [stream collected: {collected!r}]")
 
         assert len(collected) > 0
         assert "message_start" in event_types
@@ -113,6 +134,7 @@ class TestTextCreateStream:
     def test_create_stream_with_system(self, client: MiniMax):
         """Streaming with system prompt."""
         collected = ""
+        print()
         for event in client.text.create_stream(
             model="MiniMax-M2.7",
             messages=[{"role": "user", "content": "What is 1+1? Reply with only the number."}],
@@ -121,5 +143,7 @@ class TestTextCreateStream:
         ):
             if event.type == "content_block_delta" and event.delta.type == "text_delta":
                 collected += event.delta.text
+                print(event.delta.text, end="", flush=True)
+        print(f"\n  [stream collected: {collected!r}]")
 
         assert "2" in collected
