@@ -1,7 +1,10 @@
 /**
  * Integration tests for MiniMax TypeScript SDK -- Voice module.
  *
- * Only tests list() and delete() — clone/design require pay-as-you-go.
+ * list() works with any account.
+ * clone() and design() require a pay-as-you-go account with sufficient
+ * balance — they are NOT covered by the Token Plan. These tests are
+ * skipped by default.
  *
  * Run with: cd typescript && npx vitest run tests/integration/voice.test.ts
  */
@@ -31,5 +34,38 @@ describe("Voice list()", () => {
     console.log(`\n  cloned=${result.voice_cloning.length}`);
 
     expect(Array.isArray(result.voice_cloning)).toBe(true);
+  });
+
+  it("system voices have voice_id and description", async () => {
+    const result = await client.voice.list();
+    const first = result.system_voice[0]!;
+
+    console.log(`\n  first voice: id=${first.voice_id}  name=${first.voice_name}`);
+
+    expect(first.voice_id).toBeTruthy();
+    expect(Array.isArray(first.description)).toBe(true);
+  });
+});
+
+describe("Voice clone()", () => {
+  // Requires pay-as-you-go balance, not covered by Token Plan
+  it.skip("clones a voice from uploaded audio", async () => {
+    const fileInfo = await client.voice.uploadAudio("reference.mp3");
+    const result = await client.voice.clone(fileInfo.file_id, "test-clone-voice");
+
+    expect(result.voice_id).toBe("test-clone-voice");
+  });
+});
+
+describe("Voice design()", () => {
+  // Requires pay-as-you-go balance, not covered by Token Plan
+  it.skip("designs a voice from description", async () => {
+    const result = await client.voice.design(
+      "A warm, friendly male narrator",
+      "Hello, welcome to our show.",
+    );
+
+    expect(result.voice_id).toBeTruthy();
+    expect(result.trial_audio).toBeTruthy();
   });
 });
