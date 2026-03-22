@@ -536,13 +536,15 @@ npm run lint
 npm run build
 
 # Integration tests (requires MINIMAX_API_KEY in ../.env)
-npx vitest run --config /dev/null tests/integration/text.test.ts
-npx vitest run --config /dev/null tests/integration/files.test.ts
-npx vitest run --config /dev/null tests/integration/image.test.ts
-npx vitest run --config /dev/null tests/integration/voice.test.ts
-npx vitest run --config /dev/null tests/integration/music.test.ts
-npx vitest run --config /dev/null tests/integration/video.test.ts
-npx vitest run --config /dev/null tests/integration/speech.test.ts
+# Note: --test-timeout is needed because --config /dev/null resets the default to 5s.
+# Music/video/speech generation can take several minutes.
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/text.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/files.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/image.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/voice.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/music.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/video.test.ts
+npx vitest run --config /dev/null --test-timeout 600000 tests/integration/speech.test.ts
 ```
 
 ## License
