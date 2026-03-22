@@ -72,14 +72,14 @@ describe("Video textToVideo", () => {
     }
 
     console.log(
-      `\n  task_id=${result.task_id}  status=${result.status}  ` +
-        `file_id=${result.file_id}  url=${result.download_url?.slice(0, 60)}...`,
+      `\n  taskId=${result.taskId}  status=${result.status}  ` +
+        `fileId=${result.fileId}  url=${result.downloadUrl?.slice(0, 60)}...`,
     );
 
-    expect(result.task_id).toBeTruthy();
+    expect(result.taskId).toBeTruthy();
     expect(result.status).toBeTruthy();
-    expect(result.file_id).toBeTruthy();
-    expect(result.download_url).toBeTruthy();
-    expect(result.download_url).toMatch(/^https?:/);
+    expect(result.fileId).toBeTruthy();
+    expect(result.downloadUrl).toBeTruthy();
+    expect(result.downloadUrl).toMatch(/^https?:/);
   });
 });

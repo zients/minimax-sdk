@@ -30,25 +30,25 @@ describe("Voice", () => {
   it("1. list system voices", async () => {
     const result = await client.voice.list("system");
 
-    console.log(`\n  system=${result.system_voice.length}`);
+    console.log(`\n  system=${result.systemVoice.length}`);
 
-    expect(result.system_voice).not.toBeNull();
-    expect(result.system_voice.length).toBeGreaterThan(0);
-    const first = result.system_voice[0]!;
-    expect(first.voice_id).toBeTruthy();
-    expect(first.voice_id.length).toBeGreaterThan(0);
+    expect(result.systemVoice).not.toBeNull();
+    expect(result.systemVoice.length).toBeGreaterThan(0);
+    const first = result.systemVoice[0]!;
+    expect(first.voiceId).toBeTruthy();
+    expect(first.voiceId.length).toBeGreaterThan(0);
   });
 
   it("2. list all voice types", async () => {
     const result = await client.voice.list("all");
 
     console.log(
-      `\n  system=${result.system_voice.length}  cloned=${result.voice_cloning.length}  generated=${result.voice_generation.length}`,
+      `\n  system=${result.systemVoice.length}  cloned=${result.voiceCloning.length}  generated=${result.voiceGeneration.length}`,
     );
 
-    expect(result.system_voice.length).toBeGreaterThan(0);
-    expect(Array.isArray(result.voice_cloning)).toBe(true);
-    expect(Array.isArray(result.voice_generation)).toBe(true);
+    expect(result.systemVoice.length).toBeGreaterThan(0);
+    expect(Array.isArray(result.voiceCloning)).toBe(true);
+    expect(Array.isArray(result.voiceGeneration)).toBe(true);
   });
 
   it("3. design a voice from description", async (ctx) => {
@@ -59,11 +59,11 @@ describe("Voice", () => {
         "Hello, this is a test of voice design.",
       );
 
-      console.log(`\n  voice_id=${result.voice_id}  has_audio=${!!result.trial_audio}`);
+      console.log(`\n  voiceId=${result.voiceId}  hasAudio=${!!result.trialAudio}`);
 
-      expect(result.voice_id).toBeTruthy();
-      expect(result.voice_id.length).toBeGreaterThan(0);
-      expect(result.trial_audio).toBeTruthy();
+      expect(result.voiceId).toBeTruthy();
+      expect(result.voiceId.length).toBeGreaterThan(0);
+      expect(result.trialAudio).toBeTruthy();
     } catch (err) {
       if (err instanceof InsufficientBalanceError) {
         ctx.skip();
@@ -92,17 +92,17 @@ describe("Voice", () => {
         throw err;
       }
 
-      expect(fileInfo.file_id).toBeTruthy();
-      cloneFileId = String(fileInfo.file_id);
+      expect(fileInfo.fileId).toBeTruthy();
+      cloneFileId = String(fileInfo.fileId);
 
       const voiceId = `test-clone-${Date.now()}`;
 
       try {
-        const cloneResult = await client.voice.clone(fileInfo.file_id, voiceId);
+        const cloneResult = await client.voice.clone(fileInfo.fileId, voiceId);
 
-        console.log(`\n  cloned voice_id=${cloneResult.voice_id}`);
+        console.log(`\n  cloned voiceId=${cloneResult.voiceId}`);
 
-        expect(cloneResult.voice_id).toBe(voiceId);
+        expect(cloneResult.voiceId).toBe(voiceId);
         clonedVoiceId = voiceId;
       } catch (err) {
         if (

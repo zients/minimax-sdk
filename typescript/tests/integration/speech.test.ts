@@ -11,7 +11,7 @@ import { describe, it, expect } from "vitest";
 import MiniMax, { AudioResponse } from "../../src/index.js";
 
 const MODEL = "speech-2.8-hd";
-const VOICE_SETTING = { voice_id: "English_expressive_narrator" };
+const VOICE_SETTING = { voiceId: "English_expressive_narrator" };
 const SHORT_TEXT = "Hello, this is a quick test.";
 
 const client = new MiniMax();
@@ -42,13 +42,13 @@ describe("Speech tts()", () => {
       text: SHORT_TEXT,
       model: MODEL,
       voiceSetting: {
-        voice_id: "English_expressive_narrator",
+        voiceId: "English_expressive_narrator",
         speed: 1.2,
         pitch: 0,
       },
       audioSetting: {
         format: "mp3",
-        sample_rate: 24000,
+        sampleRate: 24000,
       },
     });
 
@@ -114,14 +114,14 @@ describe("Speech async", () => {
     });
 
     console.log(
-      `\n  task_id=${result.task_id}  status=${result.status}  ` +
-        `file_id=${result.file_id}  url=${result.download_url?.slice(0, 60)}...`,
+      `\n  taskId=${result.taskId}  status=${result.status}  ` +
+        `fileId=${result.fileId}  url=${result.downloadUrl?.slice(0, 60)}...`,
     );
 
-    expect(result.task_id).toBeTruthy();
+    expect(result.taskId).toBeTruthy();
     expect(result.status).toBeTruthy();
-    expect(result.file_id).toBeTruthy();
-    expect(result.download_url).toBeTruthy();
-    expect(result.download_url).toMatch(/^https?:/);
+    expect(result.fileId).toBeTruthy();
+    expect(result.downloadUrl).toBeTruthy();
+    expect(result.downloadUrl).toMatch(/^https?:/);
   });
 });

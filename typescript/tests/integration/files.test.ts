@@ -33,16 +33,16 @@ describe("Files", () => {
       const fileInfo = await client.files.upload(tmpPath, "voice_clone");
 
       console.log(
-        `\n  file_id=${fileInfo.file_id}  bytes=${fileInfo.bytes}  filename=${fileInfo.filename}`,
+        `\n  file_id=${fileInfo.fileId}  bytes=${fileInfo.bytes}  filename=${fileInfo.filename}`,
       );
 
-      expect(fileInfo.file_id).toBeTruthy();
+      expect(fileInfo.fileId).toBeTruthy();
       expect(fileInfo.purpose).toBe("voice_clone");
       expect(fileInfo.bytes).toBeGreaterThan(0);
       expect(fileInfo.filename).toBeTruthy();
-      expect(fileInfo.created_at).toBeGreaterThan(0);
+      expect(fileInfo.createdAt).toBeGreaterThan(0);
 
-      uploadedFileId = String(fileInfo.file_id);
+      uploadedFileId = String(fileInfo.fileId);
     } finally {
       try {
         unlinkSync(tmpPath);
@@ -61,7 +61,7 @@ describe("Files", () => {
 
     expect(Array.isArray(files)).toBe(true);
     expect(files.length).toBeGreaterThan(0);
-    const ids = files.map((f) => String(f.file_id));
+    const ids = files.map((f) => String(f.fileId));
     expect(ids).toContain(uploadedFileId);
   });
 
@@ -71,10 +71,10 @@ describe("Files", () => {
     const info = await client.files.retrieve(uploadedFileId);
 
     console.log(
-      `\n  file_id=${info.file_id}  purpose=${info.purpose}  bytes=${info.bytes}`,
+      `\n  file_id=${info.fileId}  purpose=${info.purpose}  bytes=${info.bytes}`,
     );
 
-    expect(String(info.file_id)).toBe(uploadedFileId);
+    expect(String(info.fileId)).toBe(uploadedFileId);
     expect(info.purpose).toBe("voice_clone");
     expect(info.bytes).toBeGreaterThan(0);
   });
