@@ -179,7 +179,7 @@ export class Music extends APIResource {
       prompt: opts.prompt,
       lyrics: opts.lyrics,
       stream: false,
-      outputFormat: opts.outputFormat ?? "url",
+      outputFormat: opts.outputFormat ?? "hex",
       lyricsOptimizer: opts.lyricsOptimizer ?? false,
       isInstrumental: opts.isInstrumental ?? false,
       audioSetting: opts.audioSetting,

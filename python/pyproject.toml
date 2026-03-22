@@ -1,6 +1,6 @@
 [project]
 name = "zients-minimax-sdk"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python SDK for MiniMax multimodal APIs"
 license = "MIT"
 readme = "README.md"

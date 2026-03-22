@@ -24,7 +24,7 @@ from minimax_sdk.exceptions import (
 
 logger = logging.getLogger("minimax_sdk")
 
-_SDK_VERSION = "0.1.0"
+_SDK_VERSION = "0.1.1"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -73,7 +73,7 @@ describe("Music", () => {
           json: {
             model: "music-2.5+",
             stream: false,
-            output_format: "url",
+            output_format: "hex",
             lyrics_optimizer: false,
             is_instrumental: false,
           },
