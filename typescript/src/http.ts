@@ -321,23 +321,31 @@ export class HttpClient {
     return new ReadableStream<string>({
       async pull(controller) {
         try {
-          const { done, value } = await reader.read();
-          if (done) {
-            if (buffer.length > 0) {
-              controller.enqueue(buffer);
-              buffer = "";
+          // Keep reading until at least one line is enqueued or stream ends.
+          // Raw chunks may not contain \n, so a single read() may not
+          // produce any complete lines.
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              if (buffer.length > 0) {
+                controller.enqueue(buffer);
+                buffer = "";
+              }
+              clear();
+              controller.close();
+              return;
             }
-            clear();
-            controller.close();
-            return;
-          }
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-          for (const line of lines) {
-            controller.enqueue(line);
+            if (lines.length > 0) {
+              for (const line of lines) {
+                controller.enqueue(line.replace(/\r$/, ""));
+              }
+              return;
+            }
           }
         } catch (err) {
           clear();
@@ -402,23 +410,28 @@ export class HttpClient {
     return new ReadableStream<string>({
       async pull(controller) {
         try {
-          const { done, value } = await reader.read();
-          if (done) {
-            if (buffer.length > 0) {
-              controller.enqueue(buffer);
-              buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              if (buffer.length > 0) {
+                controller.enqueue(buffer);
+                buffer = "";
+              }
+              clear();
+              controller.close();
+              return;
             }
-            clear();
-            controller.close();
-            return;
-          }
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-          for (const line of lines) {
-            controller.enqueue(line);
+            if (lines.length > 0) {
+              for (const line of lines) {
+                controller.enqueue(line.replace(/\r$/, ""));
+              }
+              return;
+            }
           }
         } catch (err) {
           clear();
