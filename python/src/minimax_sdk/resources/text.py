@@ -85,7 +85,7 @@ def _parse_sse_events(lines: Iterator[str]) -> Iterator[StreamEvent]:
 
     for line in lines:
         if line.startswith("data: "):
-            data_buf = line[6:]
+            data_buf = data_buf + "\n" + line[6:] if data_buf else line[6:]
         elif line == "":
             if data_buf:
                 payload = json.loads(data_buf)
@@ -133,7 +133,7 @@ async def _parse_sse_events_async(
 
     async for line in lines:
         if line.startswith("data: "):
-            data_buf = line[6:]
+            data_buf = data_buf + "\n" + line[6:] if data_buf else line[6:]
         elif line == "":
             if data_buf:
                 payload = json.loads(data_buf)
