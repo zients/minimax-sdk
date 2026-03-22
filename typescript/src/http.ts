@@ -103,6 +103,7 @@ export class HttpClient {
   #apiKey: string;
   private readonly _timeout: number;
   private readonly _fetchFn: typeof fetch;
+  private readonly _retryBaseDelayMs: number;
 
   constructor(opts: {
     apiKey: string;
@@ -110,12 +111,15 @@ export class HttpClient {
     timeout: number;
     maxRetries: number;
     fetch?: typeof fetch;
+    /** @internal Base delay for retry backoff (ms). Default 1000. */
+    retryBaseDelayMs?: number;
   }) {
     this.#apiKey = opts.apiKey;
     this.baseURL = opts.baseURL.replace(/\/+$/, "");
     this._timeout = opts.timeout;
     this.maxRetries = opts.maxRetries;
     this._fetchFn = opts.fetch ?? globalThis.fetch;
+    this._retryBaseDelayMs = opts.retryBaseDelayMs ?? DEFAULT_BASE_DELAY_MS;
   }
 
   /** @internal */
@@ -203,7 +207,7 @@ export class HttpClient {
 
         // FIX #3: backoffDelayMs returns milliseconds directly
         if (RETRYABLE_CODES.has(code) && attempt < this.maxRetries) {
-          let delay = backoffDelayMs(attempt);
+          let delay = backoffDelayMs(attempt, this._retryBaseDelayMs);
           if (code === 1002) {
             const ra = retryAfterSeconds(response.headers);
             if (ra != null) delay = ra * 1000;
@@ -218,7 +222,7 @@ export class HttpClient {
         if (err instanceof MiniMaxError) throw err;
         lastErr = err as Error;
         if (attempt < this.maxRetries) {
-          await sleep(backoffDelayMs(attempt));
+          await sleep(backoffDelayMs(attempt, this._retryBaseDelayMs));
           continue;
         }
         throw new MiniMaxError(`HTTP transport error: ${lastErr.message}`);
@@ -261,7 +265,7 @@ export class HttpClient {
           ANTHROPIC_RETRYABLE_STATUS.has(response.status) &&
           attempt < this.maxRetries
         ) {
-          let delay = backoffDelayMs(attempt);
+          let delay = backoffDelayMs(attempt, this._retryBaseDelayMs);
           if (response.status === 429) {
             const ra = retryAfterSeconds(response.headers);
             if (ra != null) delay = ra * 1000;
@@ -284,7 +288,7 @@ export class HttpClient {
         if (err instanceof MiniMaxError) throw err;
         lastErr = err as Error;
         if (attempt < this.maxRetries) {
-          await sleep(backoffDelayMs(attempt));
+          await sleep(backoffDelayMs(attempt, this._retryBaseDelayMs));
           continue;
         }
         throw new MiniMaxError(`HTTP transport error: ${lastErr.message}`);

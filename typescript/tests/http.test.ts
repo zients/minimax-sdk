@@ -233,6 +233,7 @@ function makeClient(
     timeout: 30_000,
     maxRetries,
     fetch: fetchFn as unknown as typeof fetch,
+    retryBaseDelayMs: 0,
   });
 }
 
