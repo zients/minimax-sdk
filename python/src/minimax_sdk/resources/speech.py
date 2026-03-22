@@ -261,7 +261,6 @@ class SpeechConnection:
     def __init__(
         self,
         ws: websockets.sync.client.ClientConnection,
-        api_key: str,
         model: str,
         voice_setting: dict[str, Any],
         *,
@@ -272,7 +271,6 @@ class SpeechConnection:
         timbre_weights: list[Any] | None = None,
     ) -> None:
         self._ws = ws
-        self._api_key = api_key
         self._model = model
         self._config = _build_ws_config(
             model,
@@ -514,7 +512,6 @@ class AsyncSpeechConnection:
     def __init__(
         self,
         ws: websockets.asyncio.client.ClientConnection,
-        api_key: str,
         model: str,
         voice_setting: dict[str, Any],
         *,
@@ -525,7 +522,6 @@ class AsyncSpeechConnection:
         timbre_weights: list[Any] | None = None,
     ) -> None:
         self._ws = ws
-        self._api_key = api_key
         self._model = model
         self._config = _build_ws_config(
             model,
@@ -944,15 +940,9 @@ class Speech(SyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
-        import ssl
-
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-
         logger.debug("WebSocket connecting to %s", url)
         try:
-            ws = websockets.sync.client.connect(url, additional_headers=headers, ssl=ssl_context)
+            ws = websockets.sync.client.connect(url, additional_headers=headers)
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
@@ -960,7 +950,6 @@ class Speech(SyncResource):
 
         return SpeechConnection(
             ws,
-            self._http._api_key,
             model,
             voice_setting,
             audio_setting=audio_setting,
@@ -1342,16 +1331,10 @@ class AsyncSpeech(AsyncResource):
         url = _ws_url(self._http.base_url)
         headers = {"Authorization": f"Bearer {self._http._api_key}"}
 
-        import ssl
-
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-
         logger.debug("WebSocket connecting to %s", url)
         try:
             ws = await websockets.asyncio.client.connect(
-                url, additional_headers=headers, ssl=ssl_context
+                url, additional_headers=headers
             )
         except Exception as exc:
             raise ConnectionError(
@@ -1360,7 +1343,6 @@ class AsyncSpeech(AsyncResource):
 
         conn = AsyncSpeechConnection(
             ws,
-            self._http._api_key,
             model,
             voice_setting,
             audio_setting=audio_setting,

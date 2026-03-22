@@ -50,8 +50,10 @@ def _raise_for_status(body: dict[str, Any]) -> None:
 
 
 def _backoff_delay(attempt: int, *, base: float = _DEFAULT_BASE_DELAY) -> float:
-    """Compute exponential backoff delay: base * 2^attempt."""
-    return base * (2**attempt)
+    """Compute exponential backoff delay with jitter: base * 2^attempt * (0.5..1.5)."""
+    import random
+
+    return base * (2**attempt) * (0.5 + random.random())
 
 
 def _should_retry(code: int) -> bool:
