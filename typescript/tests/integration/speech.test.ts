@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import MiniMax, { AudioResponse } from "../../src/index.js";
+import MiniMax, { AudioResponse, InsufficientBalanceError } from "../../src/index.js";
 
 const MODEL = "speech-2.8-hd";
 const VOICE_SETTING = { voiceId: "English_expressive_narrator" };
@@ -81,6 +81,43 @@ describe("Speech ttsStream()", () => {
     expect(chunks.length).toBeGreaterThan(0);
     const allBytes = Buffer.concat(chunks);
     expect(allBytes.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Speech WebSocket", () => {
+  it("connect + send returns AudioResponse", async (ctx) => {
+    let conn;
+    try {
+      conn = await client.speech.connect({
+        model: MODEL,
+        voiceSetting: VOICE_SETTING,
+      });
+    } catch (err) {
+      if (err instanceof InsufficientBalanceError) {
+        ctx.skip();
+        return;
+      }
+      // WebSocket not available (network, firewall, etc.)
+      if (err instanceof Error && (err.message.includes("ECONNREFUSED") || err.message.includes("WebSocket"))) {
+        ctx.skip();
+        return;
+      }
+      throw err;
+    }
+
+    try {
+      const audio = await conn.send(SHORT_TEXT);
+
+      console.log(
+        `\n  duration=${audio.duration}  sampleRate=${audio.sampleRate}  size=${audio.size}`,
+      );
+
+      expect(audio).toBeInstanceOf(AudioResponse);
+      expect(audio.data.length).toBeGreaterThan(0);
+      expect(audio.duration).toBeGreaterThan(0);
+    } finally {
+      await conn.close();
+    }
   });
 });
 

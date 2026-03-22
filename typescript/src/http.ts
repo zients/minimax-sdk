@@ -415,6 +415,15 @@ export class HttpClient {
       );
     }
 
+    // Check for JSON error response disguised as 200 OK (e.g. insufficient balance).
+    // The API may return 200 with application/json instead of text/event-stream.
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json") && !contentType.includes("text/event-stream")) {
+      clear();
+      const body = (await response.json()) as Record<string, unknown>;
+      raiseForStatus(body);
+    }
+
     if (!response.body) {
       clear();
       throw new MiniMaxError("Response body is null");
