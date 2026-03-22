@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  python:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,3 +39,37 @@ jobs:
       - name: Unit tests
         working-directory: python
         run: uv run pytest tests/ --ignore=tests/integration --cov=minimax_sdk --cov-report=term-missing --cov-fail-under=90 -q
+
+  typescript:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        working-directory: typescript
+        run: npm ci
+
+      - name: Type check
+        working-directory: typescript
+        run: npm run check
+
+      - name: Lint
+        working-directory: typescript
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: typescript
+        run: npm test
+
+      - name: Build
+        working-directory: typescript
+        run: npm run build
