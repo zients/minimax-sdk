@@ -46,19 +46,14 @@ const QUERY_PATH = "/v1/query/video_generation";
 function buildRequestBody(params: VideoCreateParams): Record<string, unknown> {
   const body: Record<string, unknown> = { model: params.model };
   if (params.prompt !== undefined) body.prompt = params.prompt;
-  if (params.promptOptimizer !== undefined)
-    body.prompt_optimizer = params.promptOptimizer;
-  if (params.fastPretreatment !== undefined)
-    body.fast_pretreatment = params.fastPretreatment;
+  if (params.promptOptimizer !== undefined) body.prompt_optimizer = params.promptOptimizer;
+  if (params.fastPretreatment !== undefined) body.fast_pretreatment = params.fastPretreatment;
   if (params.duration !== undefined) body.duration = params.duration;
   if (params.resolution !== undefined) body.resolution = params.resolution;
   if (params.callbackUrl !== undefined) body.callback_url = params.callbackUrl;
-  if (params.firstFrameImage !== undefined)
-    body.first_frame_image = params.firstFrameImage;
-  if (params.lastFrameImage !== undefined)
-    body.last_frame_image = params.lastFrameImage;
-  if (params.subjectReference !== undefined)
-    body.subject_reference = params.subjectReference;
+  if (params.firstFrameImage !== undefined) body.first_frame_image = params.firstFrameImage;
+  if (params.lastFrameImage !== undefined) body.last_frame_image = params.lastFrameImage;
+  if (params.subjectReference !== undefined) body.subject_reference = params.subjectReference;
   return body;
 }
 
@@ -86,9 +81,7 @@ export class Video extends APIResource {
    *
    * @returns The raw API response containing `task_id`.
    */
-  async create(
-    params: VideoCreateParams,
-  ): Promise<Record<string, unknown>> {
+  async create(params: VideoCreateParams): Promise<Record<string, unknown>> {
     return this._client.request("POST", CREATE_PATH, {
       json: buildRequestBody(params),
     });
@@ -123,17 +116,13 @@ export class Video extends APIResource {
     const taskId = String(createResp.task_id);
 
     // 2. Poll until the task reaches a terminal state.
-    const interval =
-      opts.pollInterval ?? this._client.pollInterval;
-    const timeout =
-      opts.pollTimeout ?? this._client.pollTimeout;
+    const interval = opts.pollInterval ?? this._client.pollInterval;
+    const timeout = opts.pollTimeout ?? this._client.pollTimeout;
 
-    const pollResp = await pollTask(
-      this._client._httpClient,
-      QUERY_PATH,
-      taskId,
-      { pollInterval: interval, pollTimeout: timeout },
-    );
+    const pollResp = await pollTask(this._client._httpClient, QUERY_PATH, taskId, {
+      pollInterval: interval,
+      pollTimeout: timeout,
+    });
 
     // 3. Retrieve the file to obtain a download URL.
     const fileId = String(pollResp.file_id ?? "");

@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  parseSSEStream,
-  parseSSELine,
-} from "../src/streaming.js";
+import { parseSSEStream, parseSSELine } from "../src/streaming.js";
 import { MiniMaxError } from "../src/error.js";
 
 // ── Helper: create a ReadableStream from an array of lines ──────────────────
@@ -69,10 +66,7 @@ describe("parseSSEStream", () => {
   });
 
   it("should throw MiniMaxError on error events", async () => {
-    const stream = streamFromLines([
-      'data: {"type":"error","error":{"message":"overloaded"}}',
-      "",
-    ]);
+    const stream = streamFromLines(['data: {"type":"error","error":{"message":"overloaded"}}', ""]);
 
     await expect(async () => {
       for await (const _ of parseSSEStream(stream)) {
@@ -97,10 +91,7 @@ describe("parseSSEStream", () => {
   });
 
   it("should throw with default message when error has no message", async () => {
-    const stream = streamFromLines([
-      'data: {"type":"error","error":{}}',
-      "",
-    ]);
+    const stream = streamFromLines(['data: {"type":"error","error":{}}', ""]);
 
     try {
       for await (const _ of parseSSEStream(stream)) {
@@ -128,9 +119,7 @@ describe("parseSSEStream", () => {
   });
 
   it("should skip trailing ping without empty line", async () => {
-    const stream = streamFromLines([
-      'data: {"type":"ping"}',
-    ]);
+    const stream = streamFromLines(['data: {"type":"ping"}']);
 
     const results: Record<string, unknown>[] = [];
     for await (const payload of parseSSEStream(stream)) {
@@ -141,9 +130,7 @@ describe("parseSSEStream", () => {
   });
 
   it("should throw on trailing error without empty line", async () => {
-    const stream = streamFromLines([
-      'data: {"type":"error","error":{"message":"boom"}}',
-    ]);
+    const stream = streamFromLines(['data: {"type":"error","error":{"message":"boom"}}']);
 
     try {
       for await (const _ of parseSSEStream(stream)) {
@@ -156,10 +143,7 @@ describe("parseSSEStream", () => {
   });
 
   it("should throw MiniMaxError on malformed JSON data", async () => {
-    const stream = streamFromLines([
-      "data: {not valid json}",
-      "",
-    ]);
+    const stream = streamFromLines(["data: {not valid json}", ""]);
 
     await expect(async () => {
       for await (const _ of parseSSEStream(stream)) {
@@ -168,10 +152,7 @@ describe("parseSSEStream", () => {
     }).rejects.toThrow(MiniMaxError);
 
     // Verify the error message includes the malformed data
-    const stream2 = streamFromLines([
-      "data: {not valid json}",
-      "",
-    ]);
+    const stream2 = streamFromLines(["data: {not valid json}", ""]);
 
     try {
       for await (const _ of parseSSEStream(stream2)) {
@@ -179,9 +160,7 @@ describe("parseSSEStream", () => {
       }
       expect.unreachable("should have thrown");
     } catch (err) {
-      expect((err as MiniMaxError).message).toBe(
-        "Malformed SSE data: {not valid json}",
-      );
+      expect((err as MiniMaxError).message).toBe("Malformed SSE data: {not valid json}");
     }
   });
 
@@ -198,9 +177,7 @@ describe("parseSSEStream", () => {
       expect.unreachable("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(MiniMaxError);
-      expect((err as MiniMaxError).message).toBe(
-        "Malformed SSE data: {not valid json}",
-      );
+      expect((err as MiniMaxError).message).toBe("Malformed SSE data: {not valid json}");
     }
   });
 
@@ -291,9 +268,7 @@ describe("parseSSELine", () => {
   });
 
   it("should parse nested JSON objects", () => {
-    const result = parseSSELine(
-      'data: {"delta":{"type":"text","text":"hello"},"index":0}',
-    );
+    const result = parseSSELine('data: {"delta":{"type":"text","text":"hello"},"index":0}');
     expect(result).toEqual({
       delta: { type: "text", text: "hello" },
       index: 0,

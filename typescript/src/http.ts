@@ -37,9 +37,7 @@ export function parseError(body: Record<string, unknown>): {
   const base = (body.base_resp ?? body) as BaseResp;
   const code = Number(base.status_code ?? 0);
   const msg = String(base.status_msg ?? "");
-  const traceId = String(
-    body.trace_id ?? (base as Record<string, unknown>).trace_id ?? "",
-  );
+  const traceId = String(body.trace_id ?? (base as Record<string, unknown>).trace_id ?? "");
   return { code, msg, traceId };
 }
 
@@ -50,10 +48,7 @@ export function raiseForStatus(body: Record<string, unknown>): void {
   throw new Cls(msg, code, traceId);
 }
 
-export function raiseAnthropicError(
-  status: number,
-  body: Record<string, unknown>,
-): void {
+export function raiseAnthropicError(status: number, body: Record<string, unknown>): void {
   const error = (body.error ?? {}) as Record<string, unknown>;
   const errorType = String(error.type ?? "api_error");
   const message = String(error.message ?? "Unknown error");
@@ -136,10 +131,7 @@ export class HttpClient {
   }
 
   // FIX #8: Use string concatenation to preserve base URL path components
-  private _buildURL(
-    path: string,
-    params?: Record<string, string>,
-  ): string {
+  private _buildURL(path: string, params?: Record<string, string>): string {
     const url = new URL(this.baseURL + path);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
@@ -150,9 +142,10 @@ export class HttpClient {
   }
 
   // FIX #6: Remove event listener on cleanup to prevent memory leak
-  private _createAbortSignal(
-    externalSignal?: AbortSignal,
-  ): { signal: AbortSignal; clear: () => void } {
+  private _createAbortSignal(externalSignal?: AbortSignal): {
+    signal: AbortSignal;
+    clear: () => void;
+  } {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this._timeout);
 
@@ -189,15 +182,12 @@ export class HttpClient {
       const { signal, clear } = this._createAbortSignal(opts.signal);
 
       try {
-        const response = await this._fetchFn(
-          this._buildURL(path, opts.params),
-          {
-            method,
-            headers: this._headers(),
-            body: opts.json ? JSON.stringify(opts.json) : undefined,
-            signal,
-          },
-        );
+        const response = await this._fetchFn(this._buildURL(path, opts.params), {
+          method,
+          headers: this._headers(),
+          body: opts.json ? JSON.stringify(opts.json) : undefined,
+          signal,
+        });
         clear();
 
         const body = (await response.json()) as Record<string, unknown>;
@@ -245,15 +235,12 @@ export class HttpClient {
       const { signal, clear } = this._createAbortSignal(opts.signal);
 
       try {
-        const response = await this._fetchFn(
-          this._buildURL(path, opts.params),
-          {
-            method,
-            headers: this._headers(),
-            body: opts.json ? JSON.stringify(opts.json) : undefined,
-            signal,
-          },
-        );
+        const response = await this._fetchFn(this._buildURL(path, opts.params), {
+          method,
+          headers: this._headers(),
+          body: opts.json ? JSON.stringify(opts.json) : undefined,
+          signal,
+        });
         clear();
 
         if (response.status === 200) {
@@ -261,10 +248,7 @@ export class HttpClient {
         }
 
         // Retryable HTTP status
-        if (
-          ANTHROPIC_RETRYABLE_STATUS.has(response.status) &&
-          attempt < this.maxRetries
-        ) {
+        if (ANTHROPIC_RETRYABLE_STATUS.has(response.status) && attempt < this.maxRetries) {
           let delay = backoffDelayMs(attempt, this._retryBaseDelayMs);
           if (response.status === 429) {
             const ra = retryAfterSeconds(response.headers);
@@ -279,10 +263,7 @@ export class HttpClient {
         if (body) {
           raiseAnthropicError(response.status, body);
         }
-        throw new MiniMaxError(
-          `HTTP ${response.status}: ${text}`,
-          response.status,
-        );
+        throw new MiniMaxError(`HTTP ${response.status}: ${text}`, response.status);
       } catch (err) {
         clear();
         if (err instanceof MiniMaxError) throw err;
@@ -307,15 +288,12 @@ export class HttpClient {
   ): Promise<ReadableStream<string>> {
     const { signal, clear } = this._createAbortSignal(opts.signal);
 
-    const response = await this._fetchFn(
-      this._buildURL(path, opts.params),
-      {
-        method,
-        headers: this._headers(),
-        body: opts.json ? JSON.stringify(opts.json) : undefined,
-        signal,
-      },
-    ).catch((err: Error) => {
+    const response = await this._fetchFn(this._buildURL(path, opts.params), {
+      method,
+      headers: this._headers(),
+      body: opts.json ? JSON.stringify(opts.json) : undefined,
+      signal,
+    }).catch((err: Error) => {
       clear();
       throw new MiniMaxError(`HTTP transport error: ${err.message}`);
     });
@@ -327,10 +305,7 @@ export class HttpClient {
       if (body) {
         raiseAnthropicError(response.status, body);
       }
-      throw new MiniMaxError(
-        `HTTP ${response.status}: ${text}`,
-        response.status,
-      );
+      throw new MiniMaxError(`HTTP ${response.status}: ${text}`, response.status);
     }
 
     if (!response.body) {
@@ -366,11 +341,7 @@ export class HttpClient {
           }
         } catch (err) {
           clear();
-          controller.error(
-            new MiniMaxError(
-              `Stream error: ${(err as Error).message}`,
-            ),
-          );
+          controller.error(new MiniMaxError(`Stream error: ${(err as Error).message}`));
         }
       },
       cancel() {
@@ -389,15 +360,12 @@ export class HttpClient {
   ): Promise<ReadableStream<string>> {
     const { signal, clear } = this._createAbortSignal(opts.signal);
 
-    const response = await this._fetchFn(
-      this._buildURL(path, opts.params),
-      {
-        method,
-        headers: this._headers(),
-        body: opts.json ? JSON.stringify(opts.json) : undefined,
-        signal,
-      },
-    ).catch((err: Error) => {
+    const response = await this._fetchFn(this._buildURL(path, opts.params), {
+      method,
+      headers: this._headers(),
+      body: opts.json ? JSON.stringify(opts.json) : undefined,
+      signal,
+    }).catch((err: Error) => {
       clear();
       throw new MiniMaxError(`HTTP transport error: ${err.message}`);
     });
@@ -409,10 +377,7 @@ export class HttpClient {
         const body = (await response.json()) as Record<string, unknown>;
         raiseForStatus(body);
       }
-      throw new MiniMaxError(
-        `HTTP ${response.status}: ${response.statusText}`,
-        response.status,
-      );
+      throw new MiniMaxError(`HTTP ${response.status}: ${response.statusText}`, response.status);
     }
 
     // Check for JSON error response disguised as 200 OK (e.g. insufficient balance).
@@ -457,11 +422,7 @@ export class HttpClient {
           }
         } catch (err) {
           clear();
-          controller.error(
-            new MiniMaxError(
-              `Stream error: ${(err as Error).message}`,
-            ),
-          );
+          controller.error(new MiniMaxError(`Stream error: ${(err as Error).message}`));
         }
       },
       cancel() {
@@ -481,15 +442,12 @@ export class HttpClient {
     const { signal, clear } = this._createAbortSignal(opts.signal);
 
     try {
-      const response = await this._fetchFn(
-        this._buildURL(path, opts.params),
-        {
-          method,
-          headers: this._headers(),
-          body: opts.json ? JSON.stringify(opts.json) : undefined,
-          signal,
-        },
-      );
+      const response = await this._fetchFn(this._buildURL(path, opts.params), {
+        method,
+        headers: this._headers(),
+        body: opts.json ? JSON.stringify(opts.json) : undefined,
+        signal,
+      });
       clear();
 
       if (!response.ok) {
@@ -498,19 +456,14 @@ export class HttpClient {
           const body = (await response.json()) as Record<string, unknown>;
           raiseForStatus(body);
         }
-        throw new MiniMaxError(
-          `HTTP ${response.status}: ${response.statusText}`,
-          response.status,
-        );
+        throw new MiniMaxError(`HTTP ${response.status}: ${response.statusText}`, response.status);
       }
 
       return response.arrayBuffer();
     } catch (err) {
       clear();
       if (err instanceof MiniMaxError) throw err;
-      throw new MiniMaxError(
-        `HTTP transport error: ${(err as Error).message}`,
-      );
+      throw new MiniMaxError(`HTTP transport error: ${(err as Error).message}`);
     }
   }
 
@@ -523,26 +476,22 @@ export class HttpClient {
     purpose: string,
   ): Promise<Record<string, unknown>> {
     const formData = new FormData();
-    const blob =
-      file instanceof Blob ? file : new Blob([new Uint8Array(file)]);
+    const blob = file instanceof Blob ? file : new Blob([new Uint8Array(file)]);
     formData.append("file", blob, filename);
     formData.append("purpose", purpose);
 
     const { signal, clear } = this._createAbortSignal();
 
     try {
-      const response = await this._fetchFn(
-        this._buildURL(path),
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${this.#apiKey}`,
-            "User-Agent": `@zients/minimax-sdk-typescript/${__SDK_VERSION__}`,
-          },
-          body: formData,
-          signal,
+      const response = await this._fetchFn(this._buildURL(path), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.#apiKey}`,
+          "User-Agent": `@zients/minimax-sdk-typescript/${__SDK_VERSION__}`,
         },
-      );
+        body: formData,
+        signal,
+      });
       clear();
 
       const body = (await response.json()) as Record<string, unknown>;
@@ -551,9 +500,7 @@ export class HttpClient {
     } catch (err) {
       clear();
       if (err instanceof MiniMaxError) throw err;
-      throw new MiniMaxError(
-        `HTTP transport error: ${(err as Error).message}`,
-      );
+      throw new MiniMaxError(`HTTP transport error: ${(err as Error).message}`);
     }
   }
 }

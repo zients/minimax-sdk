@@ -139,19 +139,15 @@ describe("Speech", () => {
       });
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/t2a_v2",
-        {
-          json: {
-            model: "speech-2.8-hd",
-            text: "Hello world",
-            stream: false,
-            output_format: "hex",
-            voice_setting: { voice_id: "male-qn-qingse" },
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/t2a_v2", {
+        json: {
+          model: "speech-2.8-hd",
+          text: "Hello world",
+          stream: false,
+          output_format: "hex",
+          voice_setting: { voice_id: "male-qn-qingse" },
         },
-      );
+      });
 
       expect(result).toBeInstanceOf(AudioResponse);
       expect(result.data).toEqual(Buffer.from("hello audio"));
@@ -283,17 +279,13 @@ describe("Speech", () => {
       });
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/t2a_async_v2",
-        {
-          json: {
-            model: "speech-2.8-hd",
-            text: "A very long text to synthesize.",
-            voice_setting: { voice_id: "male-qn-qingse" },
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/t2a_async_v2", {
+        json: {
+          model: "speech-2.8-hd",
+          text: "A very long text to synthesize.",
+          voice_setting: { voice_id: "male-qn-qingse" },
         },
-      );
+      });
       expect(result).toEqual(response);
     });
 
@@ -342,13 +334,9 @@ describe("Speech", () => {
       const result = await speech.asyncQuery("task_001");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "GET",
-        "/v1/query/t2a_async_query_v2",
-        {
-          params: { task_id: "task_001" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("GET", "/v1/query/t2a_async_query_v2", {
+        params: { task_id: "task_001" },
+      });
       expect(result).toEqual(response);
     });
   });
@@ -486,9 +474,7 @@ describe("Speech", () => {
       await new Promise((r) => setTimeout(r, 0));
       ws.emit("close");
 
-      await expect(startPromise).rejects.toThrow(
-        "WebSocket closed during task_start",
-      );
+      await expect(startPromise).rejects.toThrow("WebSocket closed during task_start");
     });
 
     it("rejects on WebSocket error during start", async () => {
@@ -613,10 +599,7 @@ describe("Speech", () => {
       await new Promise((r) => setTimeout(r, 0));
 
       // First chunk (not final)
-      ws.emit(
-        "message",
-        taskContinuedMsg(hex1, false),
-      );
+      ws.emit("message", taskContinuedMsg(hex1, false));
 
       // Second chunk (final)
       ws.emit(
@@ -632,10 +615,7 @@ describe("Speech", () => {
       const result = await sendPromise;
 
       // Combined audio from both chunks
-      const expected = Buffer.concat([
-        Buffer.from("part1"),
-        Buffer.from("part2"),
-      ]);
+      const expected = Buffer.concat([Buffer.from("part1"), Buffer.from("part2")]);
       expect(result.data).toEqual(expected);
     });
 
@@ -646,9 +626,7 @@ describe("Speech", () => {
       // Simulate closing
       await simulateClose(conn);
 
-      await expect(conn.send("Hello")).rejects.toThrow(
-        "SpeechConnection is already closed.",
-      );
+      await expect(conn.send("Hello")).rejects.toThrow("SpeechConnection is already closed.");
     });
 
     it("rejects on task_failed during send", async () => {
@@ -681,9 +659,7 @@ describe("Speech", () => {
       await new Promise((r) => setTimeout(r, 0));
       ws.emit("close");
 
-      await expect(sendPromise).rejects.toThrow(
-        "WebSocket closed unexpectedly",
-      );
+      await expect(sendPromise).rejects.toThrow("WebSocket closed unexpectedly");
     });
 
     it("rejects on WebSocket error during send", async () => {
@@ -713,7 +689,12 @@ describe("Speech", () => {
           data: {},
           base_resp: { status_code: 0 },
           is_final: true,
-          extra_info: { audio_length: 0, audio_sample_rate: 24000, audio_format: "mp3", audio_size: 0 },
+          extra_info: {
+            audio_length: 0,
+            audio_sample_rate: 24000,
+            audio_format: "mp3",
+            audio_size: 0,
+          },
         }),
       );
 
@@ -1334,10 +1315,10 @@ describe("Speech", () => {
 
   describe("buildWSConfig (indirect)", () => {
     it("builds minimal config with just model and voiceSetting", async () => {
-      const { conn, ws } = createConnection(
-        undefined,
-        { model: "speech-2.8-hd", voice_setting: { voice_id: "test" } },
-      );
+      const { conn, ws } = createConnection(undefined, {
+        model: "speech-2.8-hd",
+        voice_setting: { voice_id: "test" },
+      });
 
       const startPromise = conn._start();
 

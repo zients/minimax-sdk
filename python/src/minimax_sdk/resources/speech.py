@@ -1108,6 +1108,7 @@ class Speech(SyncResource):
             pronunciation_dict=pronunciation_dict,
         )
         task_id = create_resp.get("task_id", "")
+        assert self._client is not None
 
         # Step 2: Poll until done
         interval = poll_interval if poll_interval is not None else self._client.poll_interval
@@ -1500,6 +1501,7 @@ class AsyncSpeech(AsyncResource):
             pronunciation_dict=pronunciation_dict,
         )
         task_id = create_resp.get("task_id", "")
+        assert self._client is not None
 
         # Step 2: Poll until done
         interval = poll_interval if poll_interval is not None else self._client.poll_interval

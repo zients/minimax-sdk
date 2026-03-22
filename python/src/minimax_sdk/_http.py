@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, BinaryIO
@@ -24,7 +25,7 @@ from minimax_sdk.exceptions import (
 
 logger = logging.getLogger("minimax_sdk")
 
-_SDK_VERSION = "0.1.1"
+_SDK_VERSION = _pkg_version("zients-minimax-sdk")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

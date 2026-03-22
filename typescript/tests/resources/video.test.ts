@@ -46,16 +46,12 @@ describe("Video", () => {
       });
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/video_generation",
-        {
-          json: {
-            model: "MiniMax-Hailuo-2.3",
-            prompt: "A sunset over the ocean",
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/video_generation", {
+        json: {
+          model: "MiniMax-Hailuo-2.3",
+          prompt: "A sunset over the ocean",
         },
-      );
+      });
       expect(result).toEqual(response);
     });
 
@@ -100,13 +96,9 @@ describe("Video", () => {
       const result = await video.query("vtask_001");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "GET",
-        "/v1/query/video_generation",
-        {
-          params: { task_id: "vtask_001" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("GET", "/v1/query/video_generation", {
+        params: { task_id: "vtask_001" },
+      });
       expect(result).toEqual(response);
     });
   });
@@ -139,11 +131,10 @@ describe("Video", () => {
     it("creates task, polls, and returns VideoResult with download URL", async () => {
       setupPollSuccess();
 
-      const result = await video.textToVideo(
-        "A beautiful sunset",
-        "MiniMax-Hailuo-2.3",
-        { pollInterval: 1, pollTimeout: 10 },
-      );
+      const result = await video.textToVideo("A beautiful sunset", "MiniMax-Hailuo-2.3", {
+        pollInterval: 1,
+        pollTimeout: 10,
+      });
 
       expect(result.taskId).toBe("vtask_100");
       expect(result.status).toBe("Success");
@@ -250,16 +241,13 @@ describe("Video", () => {
         downloadUrl: "https://cdn.minimax.io/vfile_300",
       });
 
-      await video.framesToVideo(
-        "https://example.com/last.jpg",
-        {
-          firstFrameImage: "https://example.com/first.jpg",
-          model: "MiniMax-Hailuo-02",
-          prompt: "Smooth transition",
-          pollInterval: 1,
-          pollTimeout: 10,
-        },
-      );
+      await video.framesToVideo("https://example.com/last.jpg", {
+        firstFrameImage: "https://example.com/first.jpg",
+        model: "MiniMax-Hailuo-02",
+        prompt: "Smooth transition",
+        pollInterval: 1,
+        pollTimeout: 10,
+      });
 
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.last_frame_image).toBe("https://example.com/last.jpg");
@@ -316,9 +304,7 @@ describe("Video", () => {
         downloadUrl: "https://cdn.minimax.io/vfile_400",
       });
 
-      const refs = [
-        { type: "character", image: "https://example.com/person.jpg" },
-      ];
+      const refs = [{ type: "character", image: "https://example.com/person.jpg" }];
 
       const result = await video.subjectToVideo(refs, {
         prompt: "A person walking in a park",
@@ -353,10 +339,10 @@ describe("Video", () => {
         downloadUrl: "https://cdn.minimax.io/vfile_401",
       });
 
-      await video.subjectToVideo(
-        [{ type: "character", image: "https://example.com/face.jpg" }],
-        { pollInterval: 1, pollTimeout: 10 },
-      );
+      await video.subjectToVideo([{ type: "character", image: "https://example.com/face.jpg" }], {
+        pollInterval: 1,
+        pollTimeout: 10,
+      });
 
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.model).toBe("S2V-01");

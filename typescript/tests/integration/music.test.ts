@@ -77,9 +77,7 @@ describe("Music generate()", () => {
       chunks.push(chunk);
     }
 
-    console.log(
-      `\n  chunks=${chunks.length}  total=${Buffer.concat(chunks).length} bytes`,
-    );
+    console.log(`\n  chunks=${chunks.length}  total=${Buffer.concat(chunks).length} bytes`);
 
     expect(chunks.length).toBeGreaterThan(0);
     const total = Buffer.concat(chunks).length;

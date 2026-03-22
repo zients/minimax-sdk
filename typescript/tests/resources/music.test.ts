@@ -61,24 +61,22 @@ describe("Music", () => {
 
   describe("generate()", () => {
     it("calls request with correct method, path, and body for minimal params", async () => {
-      mockClient.request.mockResolvedValue(makeMusicUrlResponse("https://cdn.minimax.io/music.mp3"));
+      mockClient.request.mockResolvedValue(
+        makeMusicUrlResponse("https://cdn.minimax.io/music.mp3"),
+      );
 
       const result = await music.generate();
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/music_generation",
-        {
-          json: {
-            model: "music-2.5+",
-            stream: false,
-            output_format: "hex",
-            lyrics_optimizer: false,
-            is_instrumental: false,
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/music_generation", {
+        json: {
+          model: "music-2.5+",
+          stream: false,
+          output_format: "hex",
+          lyrics_optimizer: false,
+          is_instrumental: false,
         },
-      );
+      });
 
       expect(result).toBeInstanceOf(AudioResponse);
     });
@@ -288,16 +286,12 @@ describe("Music", () => {
       });
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/lyrics_generation",
-        {
-          json: {
-            mode: "write_full_song",
-            prompt: "A happy summer song",
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/lyrics_generation", {
+        json: {
+          mode: "write_full_song",
+          prompt: "A happy summer song",
         },
-      );
+      });
 
       expect(result.songTitle).toBe("Summer Breeze");
       expect(result.styleTags).toBe("pop, upbeat, summer");

@@ -241,9 +241,7 @@ describe("ANTHROPIC_ERROR_TYPE_MAP", () => {
   });
 
   it("should map billing_error to InsufficientBalanceError", () => {
-    expect(ANTHROPIC_ERROR_TYPE_MAP["billing_error"]).toBe(
-      InsufficientBalanceError,
-    );
+    expect(ANTHROPIC_ERROR_TYPE_MAP["billing_error"]).toBe(InsufficientBalanceError);
   });
 
   it("should map permission_error to AuthError", () => {
@@ -255,9 +253,7 @@ describe("ANTHROPIC_ERROR_TYPE_MAP", () => {
   });
 
   it("should map invalid_request_error to InvalidParameterError", () => {
-    expect(ANTHROPIC_ERROR_TYPE_MAP["invalid_request_error"]).toBe(
-      InvalidParameterError,
-    );
+    expect(ANTHROPIC_ERROR_TYPE_MAP["invalid_request_error"]).toBe(InvalidParameterError);
   });
 
   it("should map not_found_error to MiniMaxError", () => {
@@ -265,9 +261,7 @@ describe("ANTHROPIC_ERROR_TYPE_MAP", () => {
   });
 
   it("should map request_too_large to InvalidParameterError", () => {
-    expect(ANTHROPIC_ERROR_TYPE_MAP["request_too_large"]).toBe(
-      InvalidParameterError,
-    );
+    expect(ANTHROPIC_ERROR_TYPE_MAP["request_too_large"]).toBe(InvalidParameterError);
   });
 
   it("should map api_error to ServerError", () => {

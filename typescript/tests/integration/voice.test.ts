@@ -105,10 +105,7 @@ describe("Voice", () => {
         expect(cloneResult.voiceId).toBe(voiceId);
         clonedVoiceId = voiceId;
       } catch (err) {
-        if (
-          err instanceof InsufficientBalanceError ||
-          err instanceof InvalidParameterError
-        ) {
+        if (err instanceof InsufficientBalanceError || err instanceof InvalidParameterError) {
           ctx.skip();
           return;
         }

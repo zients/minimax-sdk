@@ -55,19 +55,15 @@ describe("Image", () => {
       const result = await image.generate("A beautiful landscape");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/image_generation",
-        {
-          json: {
-            model: "image-01",
-            prompt: "A beautiful landscape",
-            response_format: "url",
-            n: 1,
-            prompt_optimizer: false,
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/image_generation", {
+        json: {
+          model: "image-01",
+          prompt: "A beautiful landscape",
+          response_format: "url",
+          n: 1,
+          prompt_optimizer: false,
         },
-      );
+      });
 
       expect(result.id).toBe("img_001");
       expect(result.imageUrls).toEqual(["https://cdn.minimax.io/img_001.png"]);
@@ -171,9 +167,7 @@ describe("Image", () => {
     it("passes subjectReference for I2I mode", async () => {
       mockClient.request.mockResolvedValue(makeImageResponse());
 
-      const refs = [
-        { type: "character", imageFile: "https://example.com/person.jpg" },
-      ];
+      const refs = [{ type: "character", imageFile: "https://example.com/person.jpg" }];
 
       await image.generate("A person in a garden", "image-01", {
         subjectReference: refs,

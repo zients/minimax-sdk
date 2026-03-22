@@ -60,10 +60,7 @@ describe("Voice", () => {
 
       await voice.uploadAudio(Buffer.from("data"), "prompt_audio");
 
-      expect(mockClient.files.upload).toHaveBeenCalledWith(
-        Buffer.from("data"),
-        "prompt_audio",
-      );
+      expect(mockClient.files.upload).toHaveBeenCalledWith(Buffer.from("data"), "prompt_audio");
     });
   });
 
@@ -79,18 +76,14 @@ describe("Voice", () => {
       const result = await voice.clone("12345", "my-voice-id");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/voice_clone",
-        {
-          json: {
-            file_id: 12345,
-            voice_id: "my-voice-id",
-            need_noise_reduction: false,
-            need_volume_normalization: false,
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/voice_clone", {
+        json: {
+          file_id: 12345,
+          voice_id: "my-voice-id",
+          need_noise_reduction: false,
+          need_volume_normalization: false,
         },
-      );
+      });
 
       expect(result.voiceId).toBe("my-voice-id");
       expect(result.demoAudio).toBeNull();
@@ -192,16 +185,12 @@ describe("Voice", () => {
       );
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/voice_design",
-        {
-          json: {
-            prompt: "warm female narrator with a British accent",
-            preview_text: "Hello, welcome to the show.",
-          },
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/voice_design", {
+        json: {
+          prompt: "warm female narrator with a British accent",
+          preview_text: "Hello, welcome to the show.",
         },
-      );
+      });
 
       expect(result.voiceId).toBe("designed-v1");
       expect(result.trialAudio).toBeNull();
@@ -268,9 +257,7 @@ describe("Voice", () => {
   describe("list()", () => {
     it("calls request with default voiceType 'all'", async () => {
       mockClient.request.mockResolvedValue({
-        system_voice: [
-          { voice_id: "sv-001", description: ["System voice 1"] },
-        ],
+        system_voice: [{ voice_id: "sv-001", description: ["System voice 1"] }],
         voice_cloning: [
           { voice_id: "vc-001", voice_name: "My Clone", description: ["Cloned voice"] },
         ],
@@ -280,13 +267,9 @@ describe("Voice", () => {
       const result = await voice.list();
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/get_voice",
-        {
-          json: { voice_type: "all" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/get_voice", {
+        json: { voice_type: "all" },
+      });
 
       expect(result.systemVoice).toHaveLength(1);
       expect(result.systemVoice[0]!.voiceId).toBe("sv-001");
@@ -298,9 +281,7 @@ describe("Voice", () => {
     it("filters by voiceType", async () => {
       mockClient.request.mockResolvedValue({
         system_voice: [],
-        voice_cloning: [
-          { voice_id: "vc-001", description: ["A cloned voice"] },
-        ],
+        voice_cloning: [{ voice_id: "vc-001", description: ["A cloned voice"] }],
         voice_generation: [],
       });
 
@@ -353,13 +334,9 @@ describe("Voice", () => {
       await voice.delete("vc-001", "voice_cloning");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/delete_voice",
-        {
-          json: { voice_id: "vc-001", voice_type: "voice_cloning" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/delete_voice", {
+        json: { voice_id: "vc-001", voice_type: "voice_cloning" },
+      });
     });
 
     it("can delete a voice_generation type", async () => {

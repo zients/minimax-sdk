@@ -13,13 +13,14 @@ const client = new MiniMax();
 
 describe("Image generate()", () => {
   it("generates image with URL format", async () => {
-    const result = await client.image.generate(
-      "A red circle on white background",
-      "image-01",
-      { n: 1, responseFormat: "url" },
-    );
+    const result = await client.image.generate("A red circle on white background", "image-01", {
+      n: 1,
+      responseFormat: "url",
+    });
 
-    console.log(`\n  id=${result.id}  success=${result.successCount}  failed=${result.failedCount}`);
+    console.log(
+      `\n  id=${result.id}  success=${result.successCount}  failed=${result.failedCount}`,
+    );
     if (result.imageUrls) {
       console.log(`  url=${result.imageUrls[0]?.slice(0, 80)}...`);
     }
@@ -31,11 +32,7 @@ describe("Image generate()", () => {
   });
 
   it("generates multiple images", async () => {
-    const result = await client.image.generate(
-      "A blue square",
-      "image-01",
-      { n: 2 },
-    );
+    const result = await client.image.generate("A blue square", "image-01", { n: 2 });
 
     console.log(`\n  success=${result.successCount}  urls=${result.imageUrls?.length}`);
 
@@ -45,11 +42,10 @@ describe("Image generate()", () => {
   });
 
   it("generates with aspect ratio", async () => {
-    const result = await client.image.generate(
-      "A landscape panorama",
-      "image-01",
-      { aspectRatio: "16:9", n: 1 },
-    );
+    const result = await client.image.generate("A landscape panorama", "image-01", {
+      aspectRatio: "16:9",
+      n: 1,
+    });
 
     console.log(`\n  aspect_ratio=16:9  success=${result.successCount}`);
 
@@ -58,11 +54,10 @@ describe("Image generate()", () => {
   });
 
   it("generates with base64 format", async () => {
-    const result = await client.image.generate(
-      "A green triangle",
-      "image-01",
-      { n: 1, responseFormat: "base64" },
-    );
+    const result = await client.image.generate("A green triangle", "image-01", {
+      n: 1,
+      responseFormat: "base64",
+    });
 
     console.log(`\n  format=base64  has_data=${!!result.imageBase64}`);
 
@@ -72,11 +67,10 @@ describe("Image generate()", () => {
   });
 
   it("generates with prompt optimizer", async () => {
-    const result = await client.image.generate(
-      "sunset",
-      "image-01",
-      { n: 1, promptOptimizer: true },
-    );
+    const result = await client.image.generate("sunset", "image-01", {
+      n: 1,
+      promptOptimizer: true,
+    });
 
     console.log(`\n  prompt_optimizer=true  success=${result.successCount}`);
 

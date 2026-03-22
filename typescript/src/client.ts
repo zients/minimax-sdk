@@ -53,8 +53,7 @@ export class MiniMax {
   readonly _httpClient: HttpClient;
 
   constructor(options: ClientOptions = {}) {
-    const env =
-      typeof process !== "undefined" && process.env ? process.env : {};
+    const env = typeof process !== "undefined" && process.env ? process.env : {};
     const apiKey = options.apiKey ?? env.MINIMAX_API_KEY ?? "";
     if (!apiKey) {
       throw new Error(
@@ -89,11 +88,7 @@ export class MiniMax {
   // ── HTTP primitives (delegated to HttpClient) ─────────────────────────
 
   /** @internal */
-  request(
-    method: string,
-    path: string,
-    opts?: RequestOptions,
-  ): Promise<Record<string, unknown>> {
+  request(method: string, path: string, opts?: RequestOptions): Promise<Record<string, unknown>> {
     return this._httpClient.request(method, path, opts);
   }
 
@@ -125,11 +120,7 @@ export class MiniMax {
   }
 
   /** @internal */
-  requestBytes(
-    method: string,
-    path: string,
-    opts?: RequestOptions,
-  ): Promise<ArrayBuffer> {
+  requestBytes(method: string, path: string, opts?: RequestOptions): Promise<ArrayBuffer> {
     return this._httpClient.requestBytes(method, path, opts);
   }
 

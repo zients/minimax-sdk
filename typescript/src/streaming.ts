@@ -50,9 +50,7 @@ export async function* parseSSEStream(
 
           if (eventType === "error") {
             const error = (payload.error ?? {}) as Record<string, unknown>;
-            throw new MiniMaxError(
-              String(error.message ?? "Stream error"),
-            );
+            throw new MiniMaxError(String(error.message ?? "Stream error"));
           }
 
           yield payload;
@@ -106,9 +104,7 @@ export async function* parseNativeSSEAudioChunks(
 /**
  * Parse a single SSE data line. Returns the parsed JSON or null.
  */
-export function parseSSELine(
-  line: string,
-): Record<string, unknown> | null {
+export function parseSSELine(line: string): Record<string, unknown> | null {
   if (!line.startsWith("data: ")) return null;
   const data = line.slice(6);
   if (data === "[DONE]") return null;

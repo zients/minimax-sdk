@@ -143,9 +143,7 @@ export interface TextCreateParams {
 
 const MESSAGES_PATH = "/anthropic/v1/messages";
 
-function buildMessagesBody(
-  params: TextCreateParams,
-): Record<string, unknown> {
+function buildMessagesBody(params: TextCreateParams): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: params.model,
     messages: params.messages,
@@ -299,17 +297,11 @@ export class Text extends APIResource {
    * }
    * ```
    */
-  async *createStream(
-    params: TextCreateParams,
-  ): AsyncGenerator<StreamEvent> {
+  async *createStream(params: TextCreateParams): AsyncGenerator<StreamEvent> {
     const body = buildMessagesBody(params);
     body.stream = true;
 
-    const stream = await this._client.streamRequestAnthropic(
-      "POST",
-      MESSAGES_PATH,
-      { json: body },
-    );
+    const stream = await this._client.streamRequestAnthropic("POST", MESSAGES_PATH, { json: body });
 
     for await (const payload of parseSSEStream(stream)) {
       yield parseStreamEvent(payload);

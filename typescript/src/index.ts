@@ -82,18 +82,10 @@ export type {
 } from "./resources/voice.js";
 
 // Video types
-export type {
-  SubjectReference,
-  VideoCreateParams,
-  VideoResult,
-} from "./resources/video.js";
+export type { SubjectReference, VideoCreateParams, VideoResult } from "./resources/video.js";
 
 // Image types
-export type {
-  ImageSubjectReference,
-  ImageGenerateParams,
-  ImageResult,
-} from "./resources/image.js";
+export type { ImageSubjectReference, ImageGenerateParams, ImageResult } from "./resources/image.js";
 
 // Music types
 export type {

@@ -1,9 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  decodeHexAudio,
-  AudioResponse,
-  buildAudioResponse,
-} from "../src/audio.js";
+import { decodeHexAudio, AudioResponse, buildAudioResponse } from "../src/audio.js";
 
 // ── decodeHexAudio ──────────────────────────────────────────────────────────
 
@@ -100,10 +96,7 @@ describe("AudioResponse", () => {
       await audio.save("/tmp/test-output.mp3");
 
       const mockedWriteFile = writeFile as unknown as ReturnType<typeof vi.fn>;
-      expect(mockedWriteFile).toHaveBeenCalledWith(
-        "/tmp/test-output.mp3",
-        data,
-      );
+      expect(mockedWriteFile).toHaveBeenCalledWith("/tmp/test-output.mp3", data);
     });
   });
 });

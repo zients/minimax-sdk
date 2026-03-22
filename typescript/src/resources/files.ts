@@ -34,11 +34,7 @@ function parseFileInfo(raw: Record<string, unknown>): FileInfo {
 
 // ── Validation ──────────────────────────────────────────────────────────────
 
-const VALID_UPLOAD_PURPOSES = new Set([
-  "voice_clone",
-  "prompt_audio",
-  "t2a_async_input",
-]);
+const VALID_UPLOAD_PURPOSES = new Set(["voice_clone", "prompt_audio", "t2a_async_input"]);
 
 function validateUploadPurpose(purpose: string): void {
   if (!VALID_UPLOAD_PURPOSES.has(purpose)) {
@@ -64,10 +60,7 @@ export class Files extends APIResource {
    *   "voice_clone", "prompt_audio", or "t2a_async_input".
    * @returns A {@link FileInfo} describing the uploaded file.
    */
-  async upload(
-    file: string | Buffer | Blob,
-    purpose: string,
-  ): Promise<FileInfo> {
+  async upload(file: string | Buffer | Blob, purpose: string): Promise<FileInfo> {
     validateUploadPurpose(purpose);
 
     let blob: Blob;
@@ -85,12 +78,7 @@ export class Files extends APIResource {
       filename = "upload";
     }
 
-    const resp = await this._client.upload(
-      "/v1/files/upload",
-      blob,
-      filename,
-      purpose,
-    );
+    const resp = await this._client.upload("/v1/files/upload", blob, filename, purpose);
     return parseFileInfo(resp.file as Record<string, unknown>);
   }
 
