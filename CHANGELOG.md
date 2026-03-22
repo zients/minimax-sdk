@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+
+- Fix TypeScript streaming hang when SSE data spans multiple TCP chunks
+- Fix TypeScript stream line splitting to handle `\r\n` line endings
+- Add pyright type checking to Python CI (0 errors)
+- Add Prettier formatting to TypeScript CI
+- Unify Python version to single source of truth (`pyproject.toml` via `importlib.metadata`)
+- Add `CONTRIBUTING.md` and `CHANGELOG.md`
+
 ## 0.1.1
 
 - Fix music generate default `outputFormat` from `url` to `hex` (align with MiniMax API default)
