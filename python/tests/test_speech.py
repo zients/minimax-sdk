@@ -691,7 +691,7 @@ class TestSpeechConnection:
         all_messages = [_WS_TASK_STARTED] + extra_messages
         ws = MockWebSocket(all_messages)
         conn = SpeechConnection(
-            ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"},
+            ws, "speech-2.8-hd", {"voice_id": "v1"},
         )
         return conn, ws
 
@@ -842,7 +842,7 @@ class TestSpeechConnection:
         all_messages = [_WS_TASK_STARTED, _WS_CHUNK_1, _WS_FINAL_CHUNK, _WS_TASK_FINISHED]
         ws = MockWebSocket(all_messages)
 
-        with SpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"}) as conn:
+        with SpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"}) as conn:
             result = conn.send("Hello")
             assert isinstance(result, AudioResponse)
 
@@ -856,7 +856,7 @@ class TestSpeechConnection:
         original_messages = [json.dumps(_WS_TASK_STARTED).encode("utf-8")]
         ws._messages = original_messages
 
-        conn = SpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"})
+        conn = SpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"})
         assert conn.session_id == "test-session"
 
     def test_start_task_failed(self):
@@ -865,7 +865,7 @@ class TestSpeechConnection:
         ws = MockWebSocket([failed])
 
         with pytest.raises(MiniMaxError, match="start failed"):
-            SpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"})
+            SpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"})
 
     def test_send_receives_bytes_messages(self):
         """send() should handle bytes messages from the WebSocket."""
@@ -955,7 +955,7 @@ class TestSpeechConnection:
         """SpeechConnection constructor accepts all optional config params."""
         ws = MockWebSocket([_WS_TASK_STARTED])
         conn = SpeechConnection(
-            ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"},
+            ws, "speech-2.8-hd", {"voice_id": "v1"},
             audio_setting={"format": "mp3"},
             language_boost="en",
             voice_modify={"pitch": 1},
@@ -1188,7 +1188,7 @@ class TestAsyncSpeechConnection:
         all_messages = [_WS_TASK_STARTED] + extra_messages
         ws = MockAsyncWebSocket(all_messages)
         conn = AsyncSpeechConnection(
-            ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"},
+            ws, "speech-2.8-hd", {"voice_id": "v1"},
         )
         await conn._start()
         return conn, ws
@@ -1343,7 +1343,7 @@ class TestAsyncSpeechConnection:
     async def test_context_manager(self):
         all_messages = [_WS_TASK_STARTED, _WS_CHUNK_1, _WS_FINAL_CHUNK, _WS_TASK_FINISHED]
         ws = MockAsyncWebSocket(all_messages)
-        conn = AsyncSpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"})
+        conn = AsyncSpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"})
         await conn._start()
 
         async with conn:
@@ -1356,7 +1356,7 @@ class TestAsyncSpeechConnection:
     async def test_start_receives_bytes(self):
         ws = MockAsyncWebSocket([])
         ws._messages = [json.dumps(_WS_TASK_STARTED).encode("utf-8")]
-        conn = AsyncSpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"})
+        conn = AsyncSpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"})
         await conn._start()
         assert conn.session_id == "test-session"
 
@@ -1364,7 +1364,7 @@ class TestAsyncSpeechConnection:
     async def test_start_task_failed(self):
         failed = {"event": "task_failed", "message": "start failed", "base_resp": {"status_code": 0}, "trace_id": "tr-1"}
         ws = MockAsyncWebSocket([failed])
-        conn = AsyncSpeechConnection(ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"})
+        conn = AsyncSpeechConnection(ws, "speech-2.8-hd", {"voice_id": "v1"})
 
         with pytest.raises(MiniMaxError, match="start failed"):
             await conn._start()
@@ -1442,7 +1442,7 @@ class TestAsyncSpeechConnection:
     async def test_constructor_with_all_optional_params(self):
         ws = MockAsyncWebSocket([_WS_TASK_STARTED])
         conn = AsyncSpeechConnection(
-            ws, "test-key", "speech-2.8-hd", {"voice_id": "v1"},
+            ws, "speech-2.8-hd", {"voice_id": "v1"},
             audio_setting={"format": "mp3"},
             language_boost="en",
             voice_modify={"pitch": 1},

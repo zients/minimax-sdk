@@ -33,7 +33,7 @@ export async function* parseSSEStream(
       if (line.startsWith("data: ")) {
         const data = line.slice(6);
         if (data === "[DONE]") return;
-        dataBuf = data;
+        dataBuf += (dataBuf ? "\n" : "") + data;
       } else if (line === "") {
         if (dataBuf) {
           let payload: Record<string, unknown>;
@@ -80,7 +80,7 @@ export async function* parseSSEStream(
       }
     }
   } finally {
-    reader.releaseLock();
+    await reader.cancel();
   }
 }
 

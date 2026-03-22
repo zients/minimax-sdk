@@ -83,13 +83,14 @@ class TestRaiseForStatus:
 
 class TestBackoffDelay:
     def test_exponential_backoff(self) -> None:
-        assert _backoff_delay(0) == 1.0
-        assert _backoff_delay(1) == 2.0
-        assert _backoff_delay(2) == 4.0
+        # With jitter: base * 2^attempt * (0.5..1.5)
+        assert 0.5 <= _backoff_delay(0) <= 1.5
+        assert 1.0 <= _backoff_delay(1) <= 3.0
+        assert 2.0 <= _backoff_delay(2) <= 6.0
 
     def test_custom_base(self) -> None:
-        assert _backoff_delay(0, base=0.5) == 0.5
-        assert _backoff_delay(2, base=0.5) == 2.0
+        assert 0.25 <= _backoff_delay(0, base=0.5) <= 0.75
+        assert 1.0 <= _backoff_delay(2, base=0.5) <= 3.0
 
 
 class TestShouldRetry:
@@ -261,8 +262,10 @@ class TestHttpClientRequest:
 
         result = client.request("GET", "/v1/test")
         assert result == success_body
-        # Falls through to normal backoff (attempt=0 => 1.0s)
-        mock_sleep.assert_called_once_with(1.0)
+        # Falls through to normal backoff with jitter (attempt=0 => 0.5..1.5s)
+        mock_sleep.assert_called_once()
+        delay = mock_sleep.call_args[0][0]
+        assert 0.5 <= delay <= 1.5
         client.close()
 
     @patch("minimax_sdk._http.time.sleep", return_value=None)
@@ -565,7 +568,9 @@ class TestAsyncHttpClientRequest:
 
         result = await client.request("GET", "/v1/test")
         assert result == success_body
-        mock_sleep.assert_called_once_with(1.0)  # backoff(0)
+        mock_sleep.assert_called_once()  # backoff(0) with jitter
+        delay = mock_sleep.call_args[0][0]
+        assert 0.5 <= delay <= 1.5
         await client.close()
 
     @pytest.mark.asyncio

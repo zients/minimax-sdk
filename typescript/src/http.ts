@@ -68,7 +68,7 @@ const DEFAULT_BASE_DELAY_MS = 1000; // 1 second in milliseconds
 const ANTHROPIC_RETRYABLE_STATUS = new Set([429, 500, 529]);
 
 function backoffDelayMs(attempt: number, baseMs = DEFAULT_BASE_DELAY_MS): number {
-  return baseMs * 2 ** attempt;
+  return baseMs * 2 ** attempt * (0.5 + Math.random());
 }
 
 function retryAfterSeconds(headers: Headers): number | null {
