@@ -10,6 +10,7 @@ exposes resource namespaces (``speech``, ``voice``, ``video``, ``image``,
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from typing import NamedTuple, TypeVar
 
 import httpx
@@ -44,7 +45,7 @@ def _resolve_config(
     param: T | None,
     env_var: str,
     default: T,
-    cast: type[T] = str,  # type: ignore[assignment]
+    cast: Callable[[str], T] = str,  # type: ignore[assignment]
 ) -> T:
     """Resolve a configuration value with priority: parameter > env var > default.
 

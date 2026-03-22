@@ -77,17 +77,13 @@ describe("Text", () => {
       });
 
       expect(mockClient.requestAnthropic).toHaveBeenCalledOnce();
-      expect(mockClient.requestAnthropic).toHaveBeenCalledWith(
-        "POST",
-        "/anthropic/v1/messages",
-        {
-          json: {
-            model: "MiniMax-M2.7",
-            messages: [{ role: "user", content: "Hello" }],
-            max_tokens: 1024,
-          },
+      expect(mockClient.requestAnthropic).toHaveBeenCalledWith("POST", "/anthropic/v1/messages", {
+        json: {
+          model: "MiniMax-M2.7",
+          messages: [{ role: "user", content: "Hello" }],
+          max_tokens: 1024,
         },
-      );
+      });
       // Verify parsed camelCase response
       expect(result.stopReason).toBe("end_turn");
       expect(result.stopSequence).toBeNull();
@@ -244,9 +240,7 @@ describe("Text", () => {
 
   describe("createStream()", () => {
     it("sets stream:true in the body", async () => {
-      mockClient.streamRequestAnthropic.mockResolvedValue(
-        makeSSEStream([]),
-      );
+      mockClient.streamRequestAnthropic.mockResolvedValue(makeSSEStream([]));
 
       // Consume the generator
       const events: StreamEvent[] = [];
@@ -307,9 +301,7 @@ describe("Text", () => {
         "",
       ];
 
-      mockClient.streamRequestAnthropic.mockResolvedValue(
-        makeSSEStream(sseLines),
-      );
+      mockClient.streamRequestAnthropic.mockResolvedValue(makeSSEStream(sseLines));
 
       const events: StreamEvent[] = [];
       for await (const e of text.createStream({
@@ -354,9 +346,7 @@ describe("Text", () => {
     });
 
     it("includes all optional params in the stream body", async () => {
-      mockClient.streamRequestAnthropic.mockResolvedValue(
-        makeSSEStream([]),
-      );
+      mockClient.streamRequestAnthropic.mockResolvedValue(makeSSEStream([]));
 
       for await (const _ of text.createStream({
         model: "MiniMax-M2.7",
@@ -391,9 +381,7 @@ describe("Text", () => {
         "",
       ];
 
-      mockClient.streamRequestAnthropic.mockResolvedValue(
-        makeSSEStream(sseLines),
-      );
+      mockClient.streamRequestAnthropic.mockResolvedValue(makeSSEStream(sseLines));
 
       const events: StreamEvent[] = [];
       for await (const e of text.createStream({
@@ -422,9 +410,7 @@ describe("Text", () => {
         "",
       ];
 
-      mockClient.streamRequestAnthropic.mockResolvedValue(
-        makeSSEStream(sseLines),
-      );
+      mockClient.streamRequestAnthropic.mockResolvedValue(makeSSEStream(sseLines));
 
       const events: StreamEvent[] = [];
       for await (const e of text.createStream({

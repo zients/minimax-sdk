@@ -13,9 +13,7 @@ function createMockHttp(responses: Record<string, unknown>[]) {
 
 describe("pollTask", () => {
   it("should return on Success status", async () => {
-    const http = createMockHttp([
-      { status: "Success", file_id: "123" },
-    ]);
+    const http = createMockHttp([{ status: "Success", file_id: "123" }]);
 
     const result = await pollTask(http, "/v1/query/video_generation", "task1", {
       pollInterval: 0.01,
@@ -43,9 +41,7 @@ describe("pollTask", () => {
   });
 
   it("should throw MiniMaxError on Fail status", async () => {
-    const http = createMockHttp([
-      { status: "Fail", status_msg: "Generation failed" },
-    ]);
+    const http = createMockHttp([{ status: "Fail", status_msg: "Generation failed" }]);
 
     await expect(
       pollTask(http, "/v1/query/test", "task3", {
@@ -56,9 +52,7 @@ describe("pollTask", () => {
   });
 
   it("should throw PollTimeoutError when deadline exceeded", async () => {
-    const http = createMockHttp(
-      Array(100).fill({ status: "Processing" }),
-    );
+    const http = createMockHttp(Array(100).fill({ status: "Processing" }));
 
     await expect(
       pollTask(http, "/v1/query/test", "task4", {

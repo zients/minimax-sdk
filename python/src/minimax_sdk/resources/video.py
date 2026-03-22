@@ -124,6 +124,7 @@ class Video(SyncResource):
         # 1. Create the generation task.
         create_resp = self.create(**body)
         task_id: str = create_resp["task_id"]
+        assert self._client is not None
 
         # 2. Poll until the task reaches a terminal state.
         interval = poll_interval if poll_interval is not None else self._client.poll_interval
@@ -420,6 +421,7 @@ class AsyncVideo(AsyncResource):
         # 1. Create the generation task.
         create_resp = await self.create(**body)
         task_id: str = create_resp["task_id"]
+        assert self._client is not None
 
         # 2. Poll until the task reaches a terminal state.
         interval = poll_interval if poll_interval is not None else self._client.poll_interval

@@ -48,36 +48,22 @@ export class AudioResponse {
 
 // ── Response builders ───────────────────────────────────────────────────────
 
-export function buildAudioResponse(
-  resp: Record<string, unknown>,
-): AudioResponse {
+export function buildAudioResponse(resp: Record<string, unknown>): AudioResponse {
   const data = (resp.data ?? {}) as Record<string, unknown>;
-  const extraInfo = (resp.extra_info ??
-    data.extra_info ??
-    {}) as Record<string, unknown>;
+  const extraInfo = (resp.extra_info ?? data.extra_info ?? {}) as Record<string, unknown>;
 
   // Use || (not ??) so empty strings fall through, matching Python's `or`
   const hexStr =
-    (data.audio as string) ||
-    (resp.audio_hex as string) ||
-    (resp.audio as string) ||
-    "";
+    (data.audio as string) || (resp.audio_hex as string) || (resp.audio as string) || "";
   const audioBytes = decodeHexAudio(hexStr);
 
   return new AudioResponse({
     data: audioBytes,
-    duration: Number(
-      extraInfo.audio_length ?? resp.audio_length ?? resp.duration ?? 0,
-    ),
+    duration: Number(extraInfo.audio_length ?? resp.audio_length ?? resp.duration ?? 0),
     sampleRate: Number(
-      extraInfo.audio_sample_rate ??
-        resp.audio_sample_rate ??
-        resp.sample_rate ??
-        0,
+      extraInfo.audio_sample_rate ?? resp.audio_sample_rate ?? resp.sample_rate ?? 0,
     ),
-    format: String(
-      extraInfo.audio_format ?? resp.audio_format ?? resp.format ?? "mp3",
-    ),
+    format: String(extraInfo.audio_format ?? resp.audio_format ?? resp.format ?? "mp3"),
     size: Number(extraInfo.audio_size ?? resp.audio_size ?? audioBytes.length),
   });
 }

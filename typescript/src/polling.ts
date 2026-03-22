@@ -38,9 +38,7 @@ export async function pollTask(
       const base = (body.base_resp ?? {}) as Record<string, unknown>;
       const code = Number(base.status_code ?? 0);
       const msg = String(base.status_msg ?? "Task failed");
-      const traceId = String(
-        body.trace_id ?? base.trace_id ?? "",
-      );
+      const traceId = String(body.trace_id ?? base.trace_id ?? "");
       throw new MiniMaxError(msg, code, traceId);
     }
 

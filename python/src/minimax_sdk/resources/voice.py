@@ -139,6 +139,7 @@ class Voice(SyncResource):
         Returns:
             A :class:`FileInfo` describing the uploaded file.
         """
+        assert self._client is not None
         return self._client.files.upload(file, purpose)
 
     def clone(
@@ -275,6 +276,7 @@ class AsyncVoice(AsyncResource):
         Returns:
             A :class:`FileInfo` describing the uploaded file.
         """
+        assert self._client is not None
         return await self._client.files.upload(file, purpose)
 
     async def clone(

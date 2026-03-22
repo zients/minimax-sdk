@@ -7,10 +7,7 @@
  */
 
 import { APIResource } from "../resource.js";
-import {
-  AudioResponse,
-  decodeHexAudio,
-} from "../audio.js";
+import { AudioResponse, decodeHexAudio } from "../audio.js";
 import { parseNativeSSEAudioChunks } from "../streaming.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -86,9 +83,7 @@ function buildMusicBody(opts: {
   return body;
 }
 
-function buildAudioResponseFromMusic(
-  resp: Record<string, unknown>,
-): AudioResponse {
+function buildAudioResponseFromMusic(resp: Record<string, unknown>): AudioResponse {
   const dataSection = (resp.data ?? {}) as Record<string, unknown>;
   const extraInfo = (resp.extra_info ?? {}) as Record<string, unknown>;
 
@@ -227,11 +222,7 @@ export class Music extends APIResource {
       audioSetting: opts.audioSetting,
     });
 
-    const stream = await this._client.streamRequest(
-      "POST",
-      "/v1/music_generation",
-      { json: body },
-    );
+    const stream = await this._client.streamRequest("POST", "/v1/music_generation", { json: body });
 
     for await (const chunk of parseNativeSSEAudioChunks(stream)) {
       yield chunk;

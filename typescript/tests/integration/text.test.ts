@@ -59,9 +59,7 @@ describe("Text create()", () => {
   it("with system prompt", async () => {
     const result = await client.text.create({
       model: "MiniMax-M2.7",
-      messages: [
-        { role: "user", content: "What is 2+2? Reply with only the number." },
-      ],
+      messages: [{ role: "user", content: "What is 2+2? Reply with only the number." }],
       maxTokens: 256,
       system: "You are a math tutor. Answer concisely with just the number.",
     });
@@ -112,10 +110,7 @@ describe("Text createStream()", () => {
       maxTokens: 256,
     })) {
       eventTypes.add(event.type);
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         collected += event.delta.text;
         process.stdout.write(event.delta.text);
       }
@@ -143,10 +138,7 @@ describe("Text createStream()", () => {
       maxTokens: 256,
       system: "Answer with just the number.",
     })) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         collected += event.delta.text;
         process.stdout.write(event.delta.text);
       }

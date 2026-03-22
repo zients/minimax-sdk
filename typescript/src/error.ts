@@ -135,11 +135,7 @@ export class ServerError extends MiniMaxError {
 
 // ── Error Code Mapping ──────────────────────────────────────────────────────
 
-type ErrorConstructor = new (
-  message: string,
-  code: number,
-  traceId: string,
-) => MiniMaxError;
+type ErrorConstructor = new (message: string, code: number, traceId: string) => MiniMaxError;
 
 export const ERROR_CODE_MAP: Record<number, ErrorConstructor> = {
   1000: ServerError,

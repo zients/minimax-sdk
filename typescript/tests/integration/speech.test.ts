@@ -98,7 +98,10 @@ describe("Speech WebSocket", () => {
         return;
       }
       // WebSocket not available (network, firewall, etc.)
-      if (err instanceof Error && (err.message.includes("ECONNREFUSED") || err.message.includes("WebSocket"))) {
+      if (
+        err instanceof Error &&
+        (err.message.includes("ECONNREFUSED") || err.message.includes("WebSocket"))
+      ) {
         ctx.skip();
         return;
       }

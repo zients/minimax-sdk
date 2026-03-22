@@ -53,7 +53,10 @@ describe("Files", () => {
   });
 
   it("2. list files contains uploaded file", async (ctx) => {
-    if (!uploadedFileId) { ctx.skip(); return; }
+    if (!uploadedFileId) {
+      ctx.skip();
+      return;
+    }
 
     const files = await client.files.list("voice_clone");
 
@@ -66,13 +69,14 @@ describe("Files", () => {
   });
 
   it("3. retrieve file info", async (ctx) => {
-    if (!uploadedFileId) { ctx.skip(); return; }
+    if (!uploadedFileId) {
+      ctx.skip();
+      return;
+    }
 
     const info = await client.files.retrieve(uploadedFileId);
 
-    console.log(
-      `\n  file_id=${info.fileId}  purpose=${info.purpose}  bytes=${info.bytes}`,
-    );
+    console.log(`\n  file_id=${info.fileId}  purpose=${info.purpose}  bytes=${info.bytes}`);
 
     expect(String(info.fileId)).toBe(uploadedFileId);
     expect(info.purpose).toBe("voice_clone");
@@ -80,22 +84,26 @@ describe("Files", () => {
   });
 
   it("4. retrieve file content matches upload", async (ctx) => {
-    if (!uploadedFileId) { ctx.skip(); return; }
+    if (!uploadedFileId) {
+      ctx.skip();
+      return;
+    }
 
     const content = await client.files.retrieveContent(uploadedFileId);
     const downloaded = Buffer.from(content);
     const expected = makeMinimalMp3();
 
-    console.log(
-      `\n  downloaded=${downloaded.length} bytes  expected=${expected.length} bytes`,
-    );
+    console.log(`\n  downloaded=${downloaded.length} bytes  expected=${expected.length} bytes`);
 
     expect(downloaded.length).toBe(expected.length);
     expect(downloaded.equals(expected)).toBe(true);
   });
 
   it("5. delete file", async (ctx) => {
-    if (!uploadedFileId) { ctx.skip(); return; }
+    if (!uploadedFileId) {
+      ctx.skip();
+      return;
+    }
 
     await client.files.delete(uploadedFileId, "voice_clone");
     console.log(`\n  deleted file_id=${uploadedFileId}`);

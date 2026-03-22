@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  parseError,
-  raiseForStatus,
-  raiseAnthropicError,
-  HttpClient,
-} from "../src/http.js";
+import { parseError, raiseForStatus, raiseAnthropicError, HttpClient } from "../src/http.js";
 import {
   MiniMaxError,
   AuthError,
@@ -80,9 +75,7 @@ describe("parseError", () => {
 
 describe("raiseForStatus", () => {
   it("should not throw when code is 0", () => {
-    expect(() =>
-      raiseForStatus({ base_resp: { status_code: 0 } }),
-    ).not.toThrow();
+    expect(() => raiseForStatus({ base_resp: { status_code: 0 } })).not.toThrow();
   });
 
   it("should throw AuthError for code 1004", () => {
@@ -223,10 +216,7 @@ function createMockFetch(
   });
 }
 
-function makeClient(
-  fetchFn: ReturnType<typeof vi.fn>,
-  maxRetries = 2,
-): HttpClient {
+function makeClient(fetchFn: ReturnType<typeof vi.fn>, maxRetries = 2): HttpClient {
   return new HttpClient({
     apiKey: "test-key",
     baseURL: "https://api.example.com",
@@ -274,9 +264,7 @@ describe("HttpClient abort signal handling", () => {
     const ac = new AbortController();
     ac.abort();
 
-    await expect(
-      client.request("GET", "/v1/test", { signal: ac.signal }),
-    ).rejects.toThrow();
+    await expect(client.request("GET", "/v1/test", { signal: ac.signal })).rejects.toThrow();
   });
 });
 
@@ -341,9 +329,7 @@ describe("HttpClient.request()", () => {
     const mockFetch = createMockFetch(200, body);
     const client = makeClient(mockFetch, 2);
 
-    await expect(client.request("POST", "/v1/test")).rejects.toThrow(
-      AuthError,
-    );
+    await expect(client.request("POST", "/v1/test")).rejects.toThrow(AuthError);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -354,9 +340,7 @@ describe("HttpClient.request()", () => {
     const mockFetch = createMockFetch(200, failBody);
     const client = makeClient(mockFetch, 1);
 
-    await expect(client.request("POST", "/v1/test")).rejects.toThrow(
-      ServerError,
-    );
+    await expect(client.request("POST", "/v1/test")).rejects.toThrow(ServerError);
     // attempt 0 retries, then attempt 1 retries, then attempt 1 (last) raises
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
@@ -383,9 +367,7 @@ describe("HttpClient.request()", () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error("network down"));
     const client = makeClient(mockFetch, 1);
 
-    await expect(client.request("POST", "/v1/test")).rejects.toThrow(
-      MiniMaxError,
-    );
+    await expect(client.request("POST", "/v1/test")).rejects.toThrow(MiniMaxError);
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
@@ -397,9 +379,7 @@ describe("HttpClient.request()", () => {
     const mockFetch = createMockFetch(200, body);
     const client = makeClient(mockFetch, 2);
 
-    await expect(client.request("POST", "/v1/test")).rejects.toThrow(
-      InvalidParameterError,
-    );
+    await expect(client.request("POST", "/v1/test")).rejects.toThrow(InvalidParameterError);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -481,8 +461,7 @@ describe("HttpClient.requestAnthropic()", () => {
       .mockResolvedValueOnce({
         status: 500,
         ok: false,
-        json: () =>
-          Promise.resolve({ error: { type: "api_error", message: "err" } }),
+        json: () => Promise.resolve({ error: { type: "api_error", message: "err" } }),
         headers: new Headers(),
       })
       .mockResolvedValueOnce({
@@ -533,9 +512,7 @@ describe("HttpClient.requestAnthropic()", () => {
     const mockFetch = createMockFetch(401, body);
     const client = makeClient(mockFetch, 2);
 
-    await expect(
-      client.requestAnthropic("POST", "/v1/messages"),
-    ).rejects.toThrow(AuthError);
+    await expect(client.requestAnthropic("POST", "/v1/messages")).rejects.toThrow(AuthError);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -546,9 +523,9 @@ describe("HttpClient.requestAnthropic()", () => {
     const mockFetch = createMockFetch(400, body);
     const client = makeClient(mockFetch, 2);
 
-    await expect(
-      client.requestAnthropic("POST", "/v1/messages"),
-    ).rejects.toThrow(InvalidParameterError);
+    await expect(client.requestAnthropic("POST", "/v1/messages")).rejects.toThrow(
+      InvalidParameterError,
+    );
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -565,9 +542,7 @@ describe("HttpClient.requestAnthropic()", () => {
     });
 
     const client = makeClient(mockFetch, 1);
-    await expect(
-      client.requestAnthropic("POST", "/v1/messages"),
-    ).rejects.toThrow(RateLimitError);
+    await expect(client.requestAnthropic("POST", "/v1/messages")).rejects.toThrow(RateLimitError);
     // attempt 0 + 1 retry = 2 calls
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
@@ -576,9 +551,7 @@ describe("HttpClient.requestAnthropic()", () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error("timeout"));
     const client = makeClient(mockFetch, 1);
 
-    await expect(
-      client.requestAnthropic("POST", "/v1/messages"),
-    ).rejects.toThrow(MiniMaxError);
+    await expect(client.requestAnthropic("POST", "/v1/messages")).rejects.toThrow(MiniMaxError);
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
@@ -592,9 +565,7 @@ describe("HttpClient.requestAnthropic()", () => {
     });
     const client = makeClient(mockFetch, 0);
 
-    await expect(
-      client.requestAnthropic("POST", "/v1/messages"),
-    ).rejects.toThrow(MiniMaxError);
+    await expect(client.requestAnthropic("POST", "/v1/messages")).rejects.toThrow(MiniMaxError);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
@@ -676,9 +647,7 @@ describe("HttpClient.streamRequestAnthropic", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(
-      client.streamRequestAnthropic("POST", "/test"),
-    ).rejects.toThrow(AuthError);
+    await expect(client.streamRequestAnthropic("POST", "/test")).rejects.toThrow(AuthError);
   });
 
   it("should throw on HTTP error with non-JSON body", async () => {
@@ -688,27 +657,23 @@ describe("HttpClient.streamRequestAnthropic", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(
-      client.streamRequestAnthropic("POST", "/test"),
-    ).rejects.toThrow(/HTTP 502/);
+    await expect(client.streamRequestAnthropic("POST", "/test")).rejects.toThrow(/HTTP 502/);
   });
 
   it("should throw on null response body", async () => {
     const mockFetch = vi.fn().mockResolvedValue({ status: 200, body: null });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(
-      client.streamRequestAnthropic("POST", "/test"),
-    ).rejects.toThrow("Response body is null");
+    await expect(client.streamRequestAnthropic("POST", "/test")).rejects.toThrow(
+      "Response body is null",
+    );
   });
 
   it("should throw on fetch error", async () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error("network fail"));
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(
-      client.streamRequestAnthropic("POST", "/test"),
-    ).rejects.toThrow(/transport error/);
+    await expect(client.streamRequestAnthropic("POST", "/test")).rejects.toThrow(/transport error/);
   });
 
   it("should handle stream read error in pull()", async () => {
@@ -839,9 +804,7 @@ describe("HttpClient.streamRequest", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(
-      ServerError,
-    );
+    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(ServerError);
   });
 
   it("should throw on HTTP error without JSON", async () => {
@@ -853,9 +816,7 @@ describe("HttpClient.streamRequest", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(
-      /HTTP 502/,
-    );
+    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(/HTTP 502/);
   });
 
   it("should throw on null response body", async () => {
@@ -866,18 +827,14 @@ describe("HttpClient.streamRequest", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(
-      "Response body is null",
-    );
+    await expect(client.streamRequest("POST", "/test")).rejects.toThrow("Response body is null");
   });
 
   it("should throw on fetch error", async () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error("fail"));
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(
-      /transport error/,
-    );
+    await expect(client.streamRequest("POST", "/test")).rejects.toThrow(/transport error/);
   });
 
   it("should handle stream read error in pull()", async () => {
@@ -1000,9 +957,7 @@ describe("HttpClient.requestBytes", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(
-      InvalidParameterError,
-    );
+    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(InvalidParameterError);
   });
 
   it("should throw on HTTP error without JSON", async () => {
@@ -1014,18 +969,14 @@ describe("HttpClient.requestBytes", () => {
     });
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(
-      /HTTP 500/,
-    );
+    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(/HTTP 500/);
   });
 
   it("should throw on fetch error", async () => {
     const mockFetch = vi.fn().mockRejectedValue(new Error("network"));
     const client = makeClient(mockFetch as unknown as typeof fetch);
 
-    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(
-      /transport error/,
-    );
+    await expect(client.requestBytes("GET", "/test")).rejects.toThrow(/transport error/);
   });
 });
 

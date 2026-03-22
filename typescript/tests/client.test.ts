@@ -47,9 +47,7 @@ describe("MiniMax constructor", () => {
   });
 
   it("should throw when no apiKey is provided and env is empty", () => {
-    expect(() => new MiniMax()).toThrow(
-      "MiniMax API key is required",
-    );
+    expect(() => new MiniMax()).toThrow("MiniMax API key is required");
   });
 
   it("should throw with helpful message about env variable", () => {

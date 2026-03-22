@@ -5,11 +5,7 @@
  */
 
 import { APIResource } from "../resource.js";
-import {
-  AudioResponse,
-  buildAudioResponse,
-  decodeHexAudio,
-} from "../audio.js";
+import { AudioResponse, buildAudioResponse, decodeHexAudio } from "../audio.js";
 import type { FileInfo } from "./files.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -77,10 +73,7 @@ function buildCloneBody(opts: {
   return body;
 }
 
-function parseCloneResult(
-  resp: Record<string, unknown>,
-  voiceId: string,
-): VoiceCloneResult {
+function parseCloneResult(resp: Record<string, unknown>, voiceId: string): VoiceCloneResult {
   const demoAudioUrl = resp.demo_audio as string | undefined;
 
   return {
@@ -90,9 +83,7 @@ function parseCloneResult(
   };
 }
 
-function parseDesignResult(
-  resp: Record<string, unknown>,
-): VoiceDesignResult {
+function parseDesignResult(resp: Record<string, unknown>): VoiceDesignResult {
   const rawTrial = resp.trial_audio;
   let trialAudio: AudioResponse | null = null;
 

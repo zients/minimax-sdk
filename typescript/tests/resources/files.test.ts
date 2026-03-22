@@ -94,7 +94,13 @@ describe("Files", () => {
 
     it("accepts t2a_async_input purpose", async () => {
       mockClient.upload.mockResolvedValue({
-        file: { file_id: "f_003", bytes: 100, created_at: 0, filename: "upload", purpose: "t2a_async_input" },
+        file: {
+          file_id: "f_003",
+          bytes: 100,
+          created_at: 0,
+          filename: "upload",
+          purpose: "t2a_async_input",
+        },
       });
 
       const result = await files.upload(Buffer.from("text data"), "t2a_async_input");
@@ -102,18 +108,16 @@ describe("Files", () => {
     });
 
     it("throws on invalid purpose", async () => {
-      await expect(
-        files.upload(Buffer.from("data"), "invalid_purpose"),
-      ).rejects.toThrow(/Invalid upload purpose "invalid_purpose"/);
+      await expect(files.upload(Buffer.from("data"), "invalid_purpose")).rejects.toThrow(
+        /Invalid upload purpose "invalid_purpose"/,
+      );
 
       expect(mockClient.upload).not.toHaveBeenCalled();
     });
 
     it("rejects unsupported purposes", async () => {
       for (const bad of ["speech", "video", "general", ""]) {
-        await expect(
-          files.upload(Buffer.from("x"), bad),
-        ).rejects.toThrow(/Invalid upload purpose/);
+        await expect(files.upload(Buffer.from("x"), bad)).rejects.toThrow(/Invalid upload purpose/);
       }
     });
   });
@@ -144,13 +148,9 @@ describe("Files", () => {
       const result = await files.list("voice_clone");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "GET",
-        "/v1/files/list",
-        {
-          params: { purpose: "voice_clone" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("GET", "/v1/files/list", {
+        params: { purpose: "voice_clone" },
+      });
 
       expect(result).toHaveLength(2);
       // Parser converts to camelCase
@@ -184,13 +184,9 @@ describe("Files", () => {
       const result = await files.retrieve("12345");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "GET",
-        "/v1/files/retrieve",
-        {
-          params: { file_id: "12345" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("GET", "/v1/files/retrieve", {
+        params: { file_id: "12345" },
+      });
 
       // Parser converts to camelCase
       expect(result).toEqual({
@@ -226,13 +222,9 @@ describe("Files", () => {
       const result = await files.retrieveContent("12345");
 
       expect(mockClient.requestBytes).toHaveBeenCalledOnce();
-      expect(mockClient.requestBytes).toHaveBeenCalledWith(
-        "GET",
-        "/v1/files/retrieve_content",
-        {
-          params: { file_id: "12345" },
-        },
-      );
+      expect(mockClient.requestBytes).toHaveBeenCalledWith("GET", "/v1/files/retrieve_content", {
+        params: { file_id: "12345" },
+      });
 
       expect(result).toBe(arrayBuffer);
     });
@@ -256,13 +248,9 @@ describe("Files", () => {
       await files.delete("12345", "voice_clone");
 
       expect(mockClient.request).toHaveBeenCalledOnce();
-      expect(mockClient.request).toHaveBeenCalledWith(
-        "POST",
-        "/v1/files/delete",
-        {
-          json: { file_id: 12345, purpose: "voice_clone" },
-        },
-      );
+      expect(mockClient.request).toHaveBeenCalledWith("POST", "/v1/files/delete", {
+        json: { file_id: 12345, purpose: "voice_clone" },
+      });
     });
 
     it("converts file_id to number in the body", async () => {

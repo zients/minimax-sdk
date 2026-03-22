@@ -47,9 +47,7 @@ describe("Video create + query", () => {
 
     expect(queryResp.task_id).toBeTruthy();
     expect(queryResp.status).toBeTruthy();
-    expect(
-      ["Preparing", "Queueing", "Processing", "Success", "Fail"],
-    ).toContain(queryResp.status);
+    expect(["Preparing", "Queueing", "Processing", "Success", "Fail"]).toContain(queryResp.status);
   });
 });
 

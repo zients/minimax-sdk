@@ -14,11 +14,7 @@
  */
 
 import { APIResource } from "../resource.js";
-import {
-  AudioResponse,
-  buildAudioResponse,
-  decodeHexAudio,
-} from "../audio.js";
+import { AudioResponse, buildAudioResponse, decodeHexAudio } from "../audio.js";
 import { MiniMaxError } from "../error.js";
 import { raiseForStatus } from "../http.js";
 import { pollTask } from "../polling.js";
@@ -150,10 +146,7 @@ function convertTimbreWeight(tw: TimbreWeight): Record<string, unknown> {
   return { ...rest, voice_id: voiceId };
 }
 
-function buildTTSBody(
-  params: TTSParams,
-  stream: boolean,
-): Record<string, unknown> {
+function buildTTSBody(params: TTSParams, stream: boolean): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: params.model,
     text: params.text,
@@ -164,22 +157,16 @@ function buildTTSBody(
     body.voice_setting = convertVoiceSetting(params.voiceSetting);
   if (params.audioSetting !== undefined)
     body.audio_setting = convertAudioSetting(params.audioSetting);
-  if (params.languageBoost !== undefined)
-    body.language_boost = params.languageBoost;
-  if (params.voiceModify !== undefined)
-    body.voice_modify = params.voiceModify;
-  if (params.pronunciationDict !== undefined)
-    body.pronunciation_dict = params.pronunciationDict;
+  if (params.languageBoost !== undefined) body.language_boost = params.languageBoost;
+  if (params.voiceModify !== undefined) body.voice_modify = params.voiceModify;
+  if (params.pronunciationDict !== undefined) body.pronunciation_dict = params.pronunciationDict;
   if (params.timbreWeights !== undefined)
     body.timbre_weights = params.timbreWeights.map(convertTimbreWeight);
-  if (params.subtitleEnable !== undefined)
-    body.subtitle_enable = params.subtitleEnable;
+  if (params.subtitleEnable !== undefined) body.subtitle_enable = params.subtitleEnable;
   return body;
 }
 
-function buildAsyncBody(
-  params: AsyncCreateParams,
-): Record<string, unknown> {
+function buildAsyncBody(params: AsyncCreateParams): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: params.model ?? "speech-2.8-hd",
     voice_setting: convertVoiceSetting(params.voiceSetting),
@@ -188,12 +175,9 @@ function buildAsyncBody(
   if (params.textFileId !== undefined) body.text_file_id = params.textFileId;
   if (params.audioSetting !== undefined)
     body.audio_setting = convertAudioSetting(params.audioSetting);
-  if (params.languageBoost !== undefined)
-    body.language_boost = params.languageBoost;
-  if (params.voiceModify !== undefined)
-    body.voice_modify = params.voiceModify;
-  if (params.pronunciationDict !== undefined)
-    body.pronunciation_dict = params.pronunciationDict;
+  if (params.languageBoost !== undefined) body.language_boost = params.languageBoost;
+  if (params.voiceModify !== undefined) body.voice_modify = params.voiceModify;
+  if (params.pronunciationDict !== undefined) body.pronunciation_dict = params.pronunciationDict;
   return body;
 }
 
@@ -301,8 +285,14 @@ export class Speech extends APIResource {
     });
 
     await new Promise<void>((resolve, reject) => {
-      const onOpen = () => { ws.off("error", onError); resolve(); };
-      const onError = (e: Error) => { ws.off("open", onOpen); reject(e); };
+      const onOpen = () => {
+        ws.off("error", onError);
+        resolve();
+      };
+      const onError = (e: Error) => {
+        ws.off("open", onOpen);
+        reject(e);
+      };
       ws.once("open", onOpen);
       ws.once("error", onError);
     });
@@ -311,7 +301,11 @@ export class Speech extends APIResource {
     try {
       await conn._start();
     } catch (err) {
-      try { ws.close(); } catch { /* ignore */ }
+      try {
+        ws.close();
+      } catch {
+        /* ignore */
+      }
       throw err;
     }
     return conn;
@@ -331,9 +325,7 @@ export class Speech extends APIResource {
    *   model, and voice settings.
    * @returns Raw API response with `task_id`, `file_id`, and `task_token`.
    */
-  async asyncCreate(
-    params: AsyncCreateParams,
-  ): Promise<Record<string, unknown>> {
+  async asyncCreate(params: AsyncCreateParams): Promise<Record<string, unknown>> {
     const body = buildAsyncBody(params);
     return this._client.request("POST", T2A_ASYNC_PATH, { json: body });
   }
@@ -372,17 +364,13 @@ export class Speech extends APIResource {
     const taskId = String(createResp.task_id ?? "");
 
     // Step 2: Poll until done
-    const interval =
-      params.pollInterval ?? this._client.pollInterval;
-    const timeout =
-      params.pollTimeout ?? this._client.pollTimeout;
+    const interval = params.pollInterval ?? this._client.pollInterval;
+    const timeout = params.pollTimeout ?? this._client.pollTimeout;
 
-    const pollResult = await pollTask(
-      this._client._httpClient,
-      T2A_ASYNC_QUERY_PATH,
-      taskId,
-      { pollInterval: interval, pollTimeout: timeout },
-    );
+    const pollResult = await pollTask(this._client._httpClient, T2A_ASYNC_QUERY_PATH, taskId, {
+      pollInterval: interval,
+      pollTimeout: timeout,
+    });
 
     // Step 3: Retrieve file info for the download URL
     const fileId = String(pollResult.file_id ?? "");
@@ -415,12 +403,9 @@ function buildWSConfig(params: {
   };
   if (params.audioSetting !== undefined)
     config.audio_setting = convertAudioSetting(params.audioSetting);
-  if (params.languageBoost !== undefined)
-    config.language_boost = params.languageBoost;
-  if (params.voiceModify !== undefined)
-    config.voice_modify = params.voiceModify;
-  if (params.pronunciationDict !== undefined)
-    config.pronunciation_dict = params.pronunciationDict;
+  if (params.languageBoost !== undefined) config.language_boost = params.languageBoost;
+  if (params.voiceModify !== undefined) config.voice_modify = params.voiceModify;
+  if (params.pronunciationDict !== undefined) config.pronunciation_dict = params.pronunciationDict;
   if (params.timbreWeights !== undefined)
     config.timbre_weights = params.timbreWeights.map(convertTimbreWeight);
   return config;
@@ -442,9 +427,7 @@ function audioResponseFromWSChunks(
   extraInfo: Record<string, unknown>,
 ): AudioResponse {
   const combinedHex = hexChunks.join("");
-  const audioBytes = combinedHex
-    ? decodeHexAudio(combinedHex)
-    : Buffer.alloc(0);
+  const audioBytes = combinedHex ? decodeHexAudio(combinedHex) : Buffer.alloc(0);
 
   return new AudioResponse({
     data: audioBytes,
@@ -563,8 +546,7 @@ export class SpeechConnection {
             const data = (msg.data ?? {}) as Record<string, unknown>;
             const hex = data.audio as string | undefined;
             if (hex) hexChunks.push(hex);
-            if (msg.extra_info)
-              extraInfo = msg.extra_info as Record<string, unknown>;
+            if (msg.extra_info) extraInfo = msg.extra_info as Record<string, unknown>;
             if (msg.is_final) {
               cleanup();
               resolve(audioResponseFromWSChunks(hexChunks, extraInfo));
@@ -637,11 +619,17 @@ export class SpeechConnection {
     };
     const onClose = () => {
       queue.push(new Error("WebSocket closed unexpectedly"));
-      if (resolve) { resolve(); resolve = null; }
+      if (resolve) {
+        resolve();
+        resolve = null;
+      }
     };
     const onError = (err: Error) => {
       queue.push(err);
-      if (resolve) { resolve(); resolve = null; }
+      if (resolve) {
+        resolve();
+        resolve = null;
+      }
     };
     this._ws.on("message", handler);
     this._ws.once("close", onClose);

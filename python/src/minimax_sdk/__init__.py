@@ -9,6 +9,7 @@ Usage::
 """
 
 from __future__ import annotations
+from importlib.metadata import version as _pkg_version
 
 from minimax_sdk._audio import AudioResponse
 from minimax_sdk.client import AsyncMiniMax, MiniMax
@@ -61,7 +62,7 @@ from minimax_sdk.types.voice import (
     VoiceList,
 )
 
-__version__ = "0.1.1"
+__version__ = _pkg_version("zients-minimax-sdk")
 
 __all__ = [
     # Clients
