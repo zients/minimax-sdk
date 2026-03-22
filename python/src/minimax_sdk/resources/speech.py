@@ -1333,9 +1333,7 @@ class AsyncSpeech(AsyncResource):
 
         logger.debug("WebSocket connecting to %s", url)
         try:
-            ws = await websockets.asyncio.client.connect(
-                url, additional_headers=headers
-            )
+            ws = await websockets.asyncio.client.connect(url, additional_headers=headers)
         except Exception as exc:
             raise ConnectionError(
                 f"Failed to establish WebSocket connection to {url}: {exc}"
