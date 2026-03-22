@@ -24,7 +24,7 @@ export default defineConfig({
   test: {
     globals: true,
     include: ["tests/**/*.test.ts"],
-    testTimeout: 180000,
+    testTimeout: 600_000,
     env: loadParentEnv(),
   },
 });

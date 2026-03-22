@@ -23,12 +23,12 @@ describe("Music generateLyrics()", () => {
       prompt: "A short happy pop song about sunshine and summer",
     });
 
-    console.log(`\n  title=${result.song_title}`);
-    console.log(`  style=${result.style_tags}`);
+    console.log(`\n  title=${result.songTitle}`);
+    console.log(`  style=${result.styleTags}`);
     console.log(`  lyrics=${result.lyrics.slice(0, 100)}...`);
 
-    expect(result.song_title).toBeTruthy();
-    expect(result.style_tags).toBeTruthy();
+    expect(result.songTitle).toBeTruthy();
+    expect(result.styleTags).toBeTruthy();
     expect(result.lyrics).toBeTruthy();
     expect(result.lyrics.length).toBeGreaterThan(10);
   });
@@ -44,8 +44,8 @@ describe("Music generateLyrics()", () => {
       lyrics: original.lyrics,
     });
 
-    console.log(`\n  original title=${original.song_title}`);
-    console.log(`  edited title=${edited.song_title}`);
+    console.log(`\n  original title=${original.songTitle}`);
+    console.log(`  edited title=${edited.songTitle}`);
 
     expect(edited.lyrics).toBeTruthy();
     expect(edited.lyrics.length).toBeGreaterThan(10);
