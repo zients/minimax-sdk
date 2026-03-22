@@ -11,12 +11,25 @@ import { APIResource } from "../resource.js";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface FileInfo {
-  file_id: string;
+  fileId: string;
   bytes: number;
-  created_at: number;
+  createdAt: number;
   filename: string;
   purpose: string;
-  download_url?: string;
+  downloadUrl?: string;
+}
+
+// ── Parsing ─────────────────────────────────────────────────────────────────
+
+function parseFileInfo(raw: Record<string, unknown>): FileInfo {
+  return {
+    fileId: String(raw.file_id ?? ""),
+    bytes: Number(raw.bytes ?? 0),
+    createdAt: Number(raw.created_at ?? 0),
+    filename: String(raw.filename ?? ""),
+    purpose: String(raw.purpose ?? ""),
+    downloadUrl: raw.download_url != null ? String(raw.download_url) : undefined,
+  };
 }
 
 // ── Validation ──────────────────────────────────────────────────────────────
@@ -78,7 +91,7 @@ export class Files extends APIResource {
       filename,
       purpose,
     );
-    return resp.file as FileInfo;
+    return parseFileInfo(resp.file as Record<string, unknown>);
   }
 
   /**
@@ -91,21 +104,21 @@ export class Files extends APIResource {
     const resp = await this._client.request("GET", "/v1/files/list", {
       params: { purpose },
     });
-    return (resp.files as FileInfo[]) ?? [];
+    return ((resp.files ?? []) as Record<string, unknown>[]).map(parseFileInfo);
   }
 
   /**
    * Retrieve metadata (and a temporary download URL) for a file.
    *
    * @param fileId - The identifier of the file to retrieve.
-   * @returns A {@link FileInfo} with a download_url (valid for ~1 hr
+   * @returns A {@link FileInfo} with a downloadUrl (valid for ~1 hr
    *   for video files, ~9 hr for T2A async files).
    */
   async retrieve(fileId: string): Promise<FileInfo> {
     const resp = await this._client.request("GET", "/v1/files/retrieve", {
       params: { file_id: fileId },
     });
-    return resp.file as FileInfo;
+    return parseFileInfo(resp.file as Record<string, unknown>);
   }
 
   /**

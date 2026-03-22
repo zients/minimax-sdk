@@ -34,14 +34,15 @@ describe("Files", () => {
 
   describe("upload()", () => {
     it("uploads a Buffer with purpose voice_clone", async () => {
-      const fileInfo = {
+      // Mock API returns snake_case
+      const apiResponse = {
         file_id: "f_001",
         bytes: 2048,
         created_at: 1700000000,
         filename: "upload",
         purpose: "voice_clone",
       };
-      mockClient.upload.mockResolvedValue({ file: fileInfo });
+      mockClient.upload.mockResolvedValue({ file: apiResponse });
 
       const result = await files.upload(Buffer.from("audio data"), "voice_clone");
 
@@ -52,18 +53,26 @@ describe("Files", () => {
       expect(callArgs[2]).toBe("upload"); // filename for Buffer
       expect(callArgs[3]).toBe("voice_clone");
 
-      expect(result).toEqual(fileInfo);
+      // Parser converts to camelCase
+      expect(result).toEqual({
+        fileId: "f_001",
+        bytes: 2048,
+        createdAt: 1700000000,
+        filename: "upload",
+        purpose: "voice_clone",
+        downloadUrl: undefined,
+      });
     });
 
     it("uploads a Blob with purpose prompt_audio", async () => {
-      const fileInfo = {
+      const apiResponse = {
         file_id: "f_002",
         bytes: 1024,
         created_at: 1700000000,
         filename: "upload",
         purpose: "prompt_audio",
       };
-      mockClient.upload.mockResolvedValue({ file: fileInfo });
+      mockClient.upload.mockResolvedValue({ file: apiResponse });
 
       const blob = new Blob([new Uint8Array([1, 2, 3])]);
       const result = await files.upload(blob, "prompt_audio");
@@ -73,7 +82,14 @@ describe("Files", () => {
       expect(callArgs[0]).toBe("/v1/files/upload");
       expect(callArgs[2]).toBe("upload"); // filename for Blob
       expect(callArgs[3]).toBe("prompt_audio");
-      expect(result).toEqual(fileInfo);
+      expect(result).toEqual({
+        fileId: "f_002",
+        bytes: 1024,
+        createdAt: 1700000000,
+        filename: "upload",
+        purpose: "prompt_audio",
+        downloadUrl: undefined,
+      });
     });
 
     it("accepts t2a_async_input purpose", async () => {
@@ -106,6 +122,7 @@ describe("Files", () => {
 
   describe("list()", () => {
     it("calls request with GET and purpose param", async () => {
+      // Mock API returns snake_case
       const fileList = [
         {
           file_id: "f_001",
@@ -136,8 +153,9 @@ describe("Files", () => {
       );
 
       expect(result).toHaveLength(2);
-      expect(result[0]!.file_id).toBe("f_001");
-      expect(result[1]!.file_id).toBe("f_002");
+      // Parser converts to camelCase
+      expect(result[0]!.fileId).toBe("f_001");
+      expect(result[1]!.fileId).toBe("f_002");
     });
 
     it("returns empty array when no files", async () => {
@@ -152,7 +170,8 @@ describe("Files", () => {
 
   describe("retrieve()", () => {
     it("calls request with GET and file_id param", async () => {
-      const fileInfo = {
+      // Mock API returns snake_case
+      const apiResponse = {
         file_id: "12345",
         bytes: 5000,
         created_at: 1700000000,
@@ -160,7 +179,7 @@ describe("Files", () => {
         purpose: "t2a_async",
         download_url: "https://cdn.minimax.io/files/12345",
       };
-      mockClient.request.mockResolvedValue({ file: fileInfo });
+      mockClient.request.mockResolvedValue({ file: apiResponse });
 
       const result = await files.retrieve("12345");
 
@@ -173,8 +192,16 @@ describe("Files", () => {
         },
       );
 
-      expect(result).toEqual(fileInfo);
-      expect(result.download_url).toBe("https://cdn.minimax.io/files/12345");
+      // Parser converts to camelCase
+      expect(result).toEqual({
+        fileId: "12345",
+        bytes: 5000,
+        createdAt: 1700000000,
+        filename: "output.mp3",
+        purpose: "t2a_async",
+        downloadUrl: "https://cdn.minimax.io/files/12345",
+      });
+      expect(result.downloadUrl).toBe("https://cdn.minimax.io/files/12345");
     });
 
     it("converts file_id through Number and back to string", async () => {

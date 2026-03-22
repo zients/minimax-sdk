@@ -20,8 +20,8 @@ function extractText(result: Message): string {
 
 function printResult(result: Message): void {
   console.log(
-    `\n  model=${result.model}  stop=${result.stop_reason}  ` +
-      `usage=(${result.usage.input_tokens}in/${result.usage.output_tokens}out)`,
+    `\n  model=${result.model}  stop=${result.stopReason}  ` +
+      `usage=(${result.usage.inputTokens}in/${result.usage.outputTokens}out)`,
   );
   for (let i = 0; i < result.content.length; i++) {
     const block = result.content[i]!;
@@ -43,17 +43,17 @@ describe("Text create()", () => {
     const result = await client.text.create({
       model: "MiniMax-M2.7",
       messages: [{ role: "user", content: "Say hello in one word." }],
-      max_tokens: 256,
+      maxTokens: 256,
     });
 
     printResult(result);
     expect(result.id).toBeTruthy();
     expect(result.model).toBeTruthy();
-    expect(["end_turn", "max_tokens"]).toContain(result.stop_reason);
+    expect(["end_turn", "max_tokens"]).toContain(result.stopReason);
     expect(result.content.length).toBeGreaterThanOrEqual(1);
     expect(extractText(result).length).toBeGreaterThan(0);
-    expect(result.usage.input_tokens).toBeGreaterThan(0);
-    expect(result.usage.output_tokens).toBeGreaterThan(0);
+    expect(result.usage.inputTokens).toBeGreaterThan(0);
+    expect(result.usage.outputTokens).toBeGreaterThan(0);
   });
 
   it("with system prompt", async () => {
@@ -62,7 +62,7 @@ describe("Text create()", () => {
       messages: [
         { role: "user", content: "What is 2+2? Reply with only the number." },
       ],
-      max_tokens: 256,
+      maxTokens: 256,
       system: "You are a math tutor. Answer concisely with just the number.",
     });
 
@@ -79,7 +79,7 @@ describe("Text create()", () => {
         { role: "assistant", content: "Hello Alice!" },
         { role: "user", content: "What is my name?" },
       ],
-      max_tokens: 256,
+      maxTokens: 256,
     });
 
     printResult(result);
@@ -91,12 +91,12 @@ describe("Text create()", () => {
     const result = await client.text.create({
       model: "MiniMax-M2.7",
       messages: [{ role: "user", content: "Say yes." }],
-      max_tokens: 8,
+      maxTokens: 8,
       temperature: 0.1,
     });
 
     printResult(result);
-    expect(["end_turn", "max_tokens"]).toContain(result.stop_reason);
+    expect(["end_turn", "max_tokens"]).toContain(result.stopReason);
   });
 });
 
@@ -109,7 +109,7 @@ describe("Text createStream()", () => {
     for await (const event of client.text.createStream({
       model: "MiniMax-M2.7",
       messages: [{ role: "user", content: "Say hi in one word." }],
-      max_tokens: 256,
+      maxTokens: 256,
     })) {
       eventTypes.add(event.type);
       if (
@@ -140,7 +140,7 @@ describe("Text createStream()", () => {
           content: "What is 1+1? Reply with only the number.",
         },
       ],
-      max_tokens: 256,
+      maxTokens: 256,
       system: "Answer with just the number.",
     })) {
       if (

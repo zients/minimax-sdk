@@ -70,9 +70,9 @@ describe("Image", () => {
       );
 
       expect(result.id).toBe("img_001");
-      expect(result.image_urls).toEqual(["https://cdn.minimax.io/img_001.png"]);
-      expect(result.success_count).toBe(1);
-      expect(result.failed_count).toBe(0);
+      expect(result.imageUrls).toEqual(["https://cdn.minimax.io/img_001.png"]);
+      expect(result.successCount).toBe(1);
+      expect(result.failedCount).toBe(0);
     });
 
     it("uses a custom model", async () => {
@@ -121,7 +121,7 @@ describe("Image", () => {
 
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.response_format).toBe("base64");
-      expect(result.image_base64).toEqual(["base64data=="]);
+      expect(result.imageBase64).toEqual(["base64data=="]);
     });
 
     it("passes seed option for reproducibility", async () => {
@@ -153,8 +153,8 @@ describe("Image", () => {
 
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.n).toBe(3);
-      expect(result.image_urls).toHaveLength(3);
-      expect(result.success_count).toBe(3);
+      expect(result.imageUrls).toHaveLength(3);
+      expect(result.successCount).toBe(3);
     });
 
     it("passes promptOptimizer option", async () => {
@@ -172,7 +172,7 @@ describe("Image", () => {
       mockClient.request.mockResolvedValue(makeImageResponse());
 
       const refs = [
-        { type: "character", image_file: "https://example.com/person.jpg" },
+        { type: "character", imageFile: "https://example.com/person.jpg" },
       ];
 
       await image.generate("A person in a garden", "image-01", {
@@ -180,7 +180,9 @@ describe("Image", () => {
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
-      expect(body.subject_reference).toEqual(refs);
+      expect(body.subject_reference).toEqual([
+        { type: "character", image_file: "https://example.com/person.jpg" },
+      ]);
     });
 
     it("passes all options together", async () => {
@@ -194,7 +196,7 @@ describe("Image", () => {
         seed: 123,
         n: 2,
         promptOptimizer: true,
-        subjectReference: [{ type: "scene", image_file: "https://example.com/bg.jpg" }],
+        subjectReference: [{ type: "scene", imageFile: "https://example.com/bg.jpg" }],
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
@@ -234,8 +236,8 @@ describe("Image", () => {
       );
 
       const result = await image.generate("Test", "image-01", { n: 3 });
-      expect(result.success_count).toBe(1);
-      expect(result.failed_count).toBe(2);
+      expect(result.successCount).toBe(1);
+      expect(result.failedCount).toBe(2);
     });
   });
 });

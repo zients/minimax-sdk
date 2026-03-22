@@ -34,8 +34,8 @@ export type ContentBlock = TextBlock | ToolUseBlock | ThinkingBlock;
 // ── Usage ───────────────────────────────────────────────────────────────────
 
 export interface Usage {
-  input_tokens: number;
-  output_tokens: number;
+  inputTokens: number;
+  outputTokens: number;
 }
 
 // ── Message ─────────────────────────────────────────────────────────────────
@@ -46,8 +46,8 @@ export interface Message {
   role: "assistant";
   content: ContentBlock[];
   model: string;
-  stop_reason: string | null;
-  stop_sequence: string | null;
+  stopReason: string | null;
+  stopSequence: string | null;
   usage: Usage;
 }
 
@@ -60,7 +60,7 @@ export interface TextDelta {
 
 export interface InputJsonDelta {
   type: "input_json_delta";
-  partial_json: string;
+  partialJson: string;
 }
 
 export interface ThinkingDelta {
@@ -78,8 +78,8 @@ export type Delta = TextDelta | InputJsonDelta | ThinkingDelta | SignatureDelta;
 // ── Message delta ───────────────────────────────────────────────────────────
 
 export interface MessageDelta {
-  stop_reason: string | null;
-  stop_sequence: string | null;
+  stopReason: string | null;
+  stopSequence: string | null;
 }
 
 // ── Streaming event types ───────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export interface MessageStartEvent {
 export interface ContentBlockStartEvent {
   type: "content_block_start";
   index: number;
-  content_block: ContentBlock;
+  contentBlock: ContentBlock;
 }
 
 export interface ContentBlockDeltaEvent {
@@ -129,12 +129,12 @@ export type StreamEvent =
 export interface TextCreateParams {
   model: string;
   messages: Record<string, unknown>[];
-  max_tokens: number;
+  maxTokens: number;
   system?: string | Record<string, unknown>[];
   temperature?: number;
-  top_p?: number;
+  topP?: number;
   tools?: Record<string, unknown>[];
-  tool_choice?: Record<string, unknown>;
+  toolChoice?: Record<string, unknown>;
   thinking?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
@@ -149,18 +149,92 @@ function buildMessagesBody(
   const body: Record<string, unknown> = {
     model: params.model,
     messages: params.messages,
-    max_tokens: params.max_tokens,
+    max_tokens: params.maxTokens,
   };
 
   if (params.system !== undefined) body.system = params.system;
   if (params.temperature !== undefined) body.temperature = params.temperature;
-  if (params.top_p !== undefined) body.top_p = params.top_p;
+  if (params.topP !== undefined) body.top_p = params.topP;
   if (params.tools !== undefined) body.tools = params.tools;
-  if (params.tool_choice !== undefined) body.tool_choice = params.tool_choice;
+  if (params.toolChoice !== undefined) body.tool_choice = params.toolChoice;
   if (params.thinking !== undefined) body.thinking = params.thinking;
   if (params.metadata !== undefined) body.metadata = params.metadata;
 
   return body;
+}
+
+// ── Response parsing helpers ────────────────────────────────────────────────
+
+function parseUsage(raw: any): Usage {
+  return {
+    inputTokens: raw.input_tokens,
+    outputTokens: raw.output_tokens,
+  };
+}
+
+function parseMessage(raw: any): Message {
+  return {
+    id: raw.id,
+    type: raw.type,
+    role: raw.role,
+    content: raw.content,
+    model: raw.model,
+    stopReason: raw.stop_reason,
+    stopSequence: raw.stop_sequence,
+    usage: parseUsage(raw.usage),
+  };
+}
+
+function parseDelta(raw: any): Delta {
+  if (raw.type === "input_json_delta") {
+    return {
+      type: raw.type,
+      partialJson: raw.partial_json,
+    } as InputJsonDelta;
+  }
+  return raw as Delta;
+}
+
+function parseMessageDelta(raw: any): MessageDelta {
+  return {
+    stopReason: raw.stop_reason,
+    stopSequence: raw.stop_sequence,
+  };
+}
+
+function parseStreamEvent(raw: any): StreamEvent {
+  switch (raw.type) {
+    case "message_start":
+      return {
+        type: raw.type,
+        message: parseMessage(raw.message),
+      } as MessageStartEvent;
+
+    case "content_block_start":
+      return {
+        type: raw.type,
+        index: raw.index,
+        contentBlock: raw.content_block,
+      } as ContentBlockStartEvent;
+
+    case "content_block_delta":
+      return {
+        type: raw.type,
+        index: raw.index,
+        delta: parseDelta(raw.delta),
+      } as ContentBlockDeltaEvent;
+
+    case "message_delta":
+      return {
+        type: raw.type,
+        delta: parseMessageDelta(raw.delta),
+        usage: parseUsage(raw.usage),
+      } as MessageDeltaEvent;
+
+    default:
+      // content_block_stop, message_stop pass through as-is
+      return raw as StreamEvent;
+  }
 }
 
 // ── Text resource ───────────────────────────────────────────────────────────
@@ -178,13 +252,13 @@ export class Text extends APIResource {
    * @param params.model - Model ID (e.g. "MiniMax-M2.7", "MiniMax-M2.5").
    * @param params.messages - Conversation history as a list of message objects
    *   with `role` ("user" or "assistant") and `content`.
-   * @param params.max_tokens - Maximum number of tokens to generate.
+   * @param params.maxTokens - Maximum number of tokens to generate.
    * @param params.system - System prompt -- either a plain string or a list of
    *   text block objects.
    * @param params.temperature - Sampling temperature in range (0, 1].
-   * @param params.top_p - Nucleus sampling threshold in range (0, 1].
+   * @param params.topP - Nucleus sampling threshold in range (0, 1].
    * @param params.tools - Tool definitions for function calling.
-   * @param params.tool_choice - Tool selection strategy (auto, any, tool, none).
+   * @param params.toolChoice - Tool selection strategy (auto, any, tool, none).
    * @param params.thinking - Extended thinking configuration, e.g.
    *   `{ type: "enabled", budget_tokens: 10000 }`.
    * @param params.metadata - Request metadata (e.g. `{ user_id: "..." }`).
@@ -198,7 +272,7 @@ export class Text extends APIResource {
       json: body,
     });
 
-    return resp as unknown as Message;
+    return parseMessage(resp);
   }
 
   /**
@@ -215,7 +289,7 @@ export class Text extends APIResource {
    * for await (const event of client.text.createStream({
    *   model: "MiniMax-M2.7",
    *   messages: [{ role: "user", content: "Hello" }],
-   *   max_tokens: 1024,
+   *   maxTokens: 1024,
    * })) {
    *   if (event.type === "content_block_delta") {
    *     if (event.delta.type === "text_delta") {
@@ -238,7 +312,7 @@ export class Text extends APIResource {
     );
 
     for await (const payload of parseSSEStream(stream)) {
-      yield payload as unknown as StreamEvent;
+      yield parseStreamEvent(payload);
     }
   }
 }

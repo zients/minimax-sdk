@@ -92,15 +92,15 @@ describe("Voice", () => {
         },
       );
 
-      expect(result.voice_id).toBe("my-voice-id");
-      expect(result.demo_audio).toBeNull();
+      expect(result.voiceId).toBe("my-voice-id");
+      expect(result.demoAudio).toBeNull();
     });
 
     it("includes clonePrompt in the body", async () => {
       mockClient.request.mockResolvedValue({});
 
       await voice.clone("100", "v-clone", {
-        clonePrompt: { prompt_audio: "audio_file_id", prompt_text: "Hello world" },
+        clonePrompt: { promptAudio: "audio_file_id", promptText: "Hello world" },
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
@@ -123,7 +123,7 @@ describe("Voice", () => {
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.text).toBe("This is a demo.");
       expect(body.model).toBe("speech-2.8-hd");
-      expect(result.demo_audio).toBe("https://cdn.minimax.io/demo.mp3");
+      expect(result.demoAudio).toBe("https://cdn.minimax.io/demo.mp3");
     });
 
     it("includes languageBoost option", async () => {
@@ -173,7 +173,7 @@ describe("Voice", () => {
       });
 
       const result = await voice.clone("100", "v-clone");
-      expect(result.input_sensitive).toBe("flagged_content");
+      expect(result.inputSensitive).toBe("flagged_content");
     });
   });
 
@@ -203,8 +203,8 @@ describe("Voice", () => {
         },
       );
 
-      expect(result.voice_id).toBe("designed-v1");
-      expect(result.trial_audio).toBeNull();
+      expect(result.voiceId).toBe("designed-v1");
+      expect(result.trialAudio).toBeNull();
     });
 
     it("includes voiceId when provided", async () => {
@@ -230,8 +230,8 @@ describe("Voice", () => {
 
       const result = await voice.design("A bright voice", "Preview text");
 
-      expect(result.trial_audio).toBeInstanceOf(AudioResponse);
-      expect(result.trial_audio!.data).toEqual(Buffer.from("trial audio bytes"));
+      expect(result.trialAudio).toBeInstanceOf(AudioResponse);
+      expect(result.trialAudio!.data).toEqual(Buffer.from("trial audio bytes"));
     });
 
     it("handles nested dict trial_audio structure", async () => {
@@ -249,8 +249,8 @@ describe("Voice", () => {
 
       const result = await voice.design("A calm voice", "Preview");
 
-      expect(result.trial_audio).toBeInstanceOf(AudioResponse);
-      expect(result.trial_audio!.data).toEqual(Buffer.from("nested audio"));
+      expect(result.trialAudio).toBeInstanceOf(AudioResponse);
+      expect(result.trialAudio!.data).toEqual(Buffer.from("nested audio"));
     });
 
     it("returns null trial_audio when not present", async () => {
@@ -259,7 +259,7 @@ describe("Voice", () => {
       });
 
       const result = await voice.design("A voice", "Text");
-      expect(result.trial_audio).toBeNull();
+      expect(result.trialAudio).toBeNull();
     });
   });
 
@@ -288,11 +288,11 @@ describe("Voice", () => {
         },
       );
 
-      expect(result.system_voice).toHaveLength(1);
-      expect(result.system_voice[0]!.voice_id).toBe("sv-001");
-      expect(result.voice_cloning).toHaveLength(1);
-      expect(result.voice_cloning[0]!.voice_name).toBe("My Clone");
-      expect(result.voice_generation).toHaveLength(0);
+      expect(result.systemVoice).toHaveLength(1);
+      expect(result.systemVoice[0]!.voiceId).toBe("sv-001");
+      expect(result.voiceCloning).toHaveLength(1);
+      expect(result.voiceCloning[0]!.voiceName).toBe("My Clone");
+      expect(result.voiceGeneration).toHaveLength(0);
     });
 
     it("filters by voiceType", async () => {
@@ -326,11 +326,11 @@ describe("Voice", () => {
 
       const result = await voice.list();
 
-      const v = result.system_voice[0]!;
-      expect(v.voice_id).toBe("sv-001");
-      expect(v.voice_name).toBe("System Voice");
+      const v = result.systemVoice[0]!;
+      expect(v.voiceId).toBe("sv-001");
+      expect(v.voiceName).toBe("System Voice");
       expect(v.description).toEqual(["A system voice", "General purpose"]);
-      expect(v.created_time).toBe("2024-01-01T00:00:00Z");
+      expect(v.createdTime).toBe("2024-01-01T00:00:00Z");
     });
 
     it("handles empty lists gracefully", async () => {
@@ -338,9 +338,9 @@ describe("Voice", () => {
 
       const result = await voice.list();
 
-      expect(result.system_voice).toEqual([]);
-      expect(result.voice_cloning).toEqual([]);
-      expect(result.voice_generation).toEqual([]);
+      expect(result.systemVoice).toEqual([]);
+      expect(result.voiceCloning).toEqual([]);
+      expect(result.voiceGeneration).toEqual([]);
     });
   });
 

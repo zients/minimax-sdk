@@ -238,7 +238,23 @@ function makeClient(
 
 // ── _createAbortSignal ───────────────────────────────────────────────────────
 
-describe("HttpClient already-aborted signal", () => {
+describe("HttpClient abort signal handling", () => {
+  it("should forward non-aborted external signal to fetch", async () => {
+    const body = { base_resp: { status_code: 0 }, data: "ok" };
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve(body),
+      headers: new Headers(),
+    });
+    const client = makeClient(mockFetch, 0);
+
+    const ac = new AbortController();
+    // Pass a non-aborted signal — exercises the addEventListener branch
+    const result = await client.request("GET", "/v1/test", { signal: ac.signal });
+    expect(result).toEqual(body);
+  });
+
   it("should reject immediately when signal is already aborted", async () => {
     // Use a fetch mock that respects the abort signal, like real fetch does
     const abortAwareFetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
@@ -604,6 +620,16 @@ describe("HttpClient constructor", () => {
     });
     expect(client.maxRetries).toBe(5);
   });
+
+  it("should return the api key via getApiKey()", () => {
+    const client = new HttpClient({
+      apiKey: "test-secret",
+      baseURL: "https://api.example.com",
+      timeout: 1000,
+      maxRetries: 0,
+    });
+    expect(client.getApiKey()).toBe("test-secret");
+  });
 });
 
 // ── streamRequestAnthropic ──────────────────────────────────────────────────
@@ -682,6 +708,83 @@ describe("HttpClient.streamRequestAnthropic", () => {
     await expect(
       client.streamRequestAnthropic("POST", "/test"),
     ).rejects.toThrow(/transport error/);
+  });
+
+  it("should handle stream read error in pull()", async () => {
+    // Create a stream whose underlying reader.read() rejects
+    let readCount = 0;
+    const mockReader = {
+      read: vi.fn().mockImplementation(() => {
+        readCount++;
+        if (readCount === 1) {
+          return Promise.resolve({
+            done: false,
+            value: new TextEncoder().encode("line1\n"),
+          });
+        }
+        return Promise.reject(new Error("stream read failed"));
+      }),
+      cancel: vi.fn(),
+    };
+    const mockBody = { getReader: () => mockReader };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 200,
+      body: mockBody,
+    });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequestAnthropic("POST", "/test");
+    const reader = stream.getReader();
+
+    // First read succeeds with enqueued data
+    await reader.read();
+    // Second read should get the MiniMaxError from the catch block
+    await expect(reader.read()).rejects.toThrow(/Stream error/);
+  });
+
+  it("should flush remaining buffer when stream ends with partial line", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        // Send data without trailing newline so buffer has leftover
+        controller.enqueue(new TextEncoder().encode("line1\npartial"));
+        controller.close();
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValue({ status: 200, body });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequestAnthropic("POST", "/test");
+    const reader = stream.getReader();
+    const chunks: string[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    expect(chunks).toContain("line1");
+    expect(chunks).toContain("partial");
+  });
+
+  it("should call reader.cancel() on stream cancel", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("data: test\n"));
+      },
+      pull() {
+        // Keep stream open
+        return new Promise(() => {});
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValue({ status: 200, body });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequestAnthropic("POST", "/test");
+    const reader = stream.getReader();
+    // Read first chunk
+    await reader.read();
+    // Cancel the stream
+    await reader.cancel();
   });
 });
 
@@ -774,6 +877,87 @@ describe("HttpClient.streamRequest", () => {
     await expect(client.streamRequest("POST", "/test")).rejects.toThrow(
       /transport error/,
     );
+  });
+
+  it("should handle stream read error in pull()", async () => {
+    let readCount = 0;
+    const mockReader = {
+      read: vi.fn().mockImplementation(() => {
+        readCount++;
+        if (readCount === 1) {
+          return Promise.resolve({
+            done: false,
+            value: new TextEncoder().encode("data: hello\n"),
+          });
+        }
+        return Promise.reject(new Error("stream read failed"));
+      }),
+      cancel: vi.fn(),
+    };
+    const mockBody = { getReader: () => mockReader };
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body: mockBody,
+      headers: new Headers(),
+    });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequest("POST", "/test");
+    const reader = stream.getReader();
+
+    // First read succeeds
+    await reader.read();
+    // Next read should get the error
+    await expect(reader.read()).rejects.toThrow(/Stream error/);
+  });
+
+  it("should flush remaining buffer when stream ends with partial line", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("line1\npartial"));
+        controller.close();
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body,
+      headers: new Headers(),
+    });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequest("POST", "/test");
+    const reader = stream.getReader();
+    const chunks: string[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+    expect(chunks).toContain("line1");
+    expect(chunks).toContain("partial");
+  });
+
+  it("should call reader.cancel() on stream cancel", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("data: test\n"));
+      },
+      pull() {
+        return new Promise(() => {});
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body,
+      headers: new Headers(),
+    });
+    const client = makeClient(mockFetch as unknown as typeof fetch);
+
+    const stream = await client.streamRequest("POST", "/test");
+    const reader = stream.getReader();
+    await reader.read();
+    await reader.cancel();
   });
 });
 

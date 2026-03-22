@@ -11,28 +11,28 @@ import { APIResource } from "../resource.js";
 
 export interface ImageSubjectReference {
   type: string;
-  image_file: string;
+  imageFile: string;
 }
 
 export interface ImageGenerateParams {
   prompt: string;
   model?: string;
-  aspect_ratio?: string;
+  aspectRatio?: string;
   width?: number;
   height?: number;
-  response_format?: string;
+  responseFormat?: string;
   seed?: number;
   n?: number;
-  prompt_optimizer?: boolean;
-  subject_reference?: ImageSubjectReference[];
+  promptOptimizer?: boolean;
+  subjectReference?: ImageSubjectReference[];
 }
 
 export interface ImageResult {
   id: string;
-  image_urls?: string[];
-  image_base64?: string[];
-  success_count: number;
-  failed_count: number;
+  imageUrls?: string[];
+  imageBase64?: string[];
+  successCount: number;
+  failedCount: number;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -40,29 +40,33 @@ export interface ImageResult {
 function buildImageBody(params: {
   prompt: string;
   model: string;
-  aspect_ratio?: string;
+  aspectRatio?: string;
   width?: number;
   height?: number;
-  response_format: string;
+  responseFormat: string;
   seed?: number;
   n: number;
-  prompt_optimizer: boolean;
-  subject_reference?: ImageSubjectReference[];
+  promptOptimizer: boolean;
+  subjectReference?: ImageSubjectReference[];
 }): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: params.model,
     prompt: params.prompt,
-    response_format: params.response_format,
+    response_format: params.responseFormat,
     n: params.n,
-    prompt_optimizer: params.prompt_optimizer,
+    prompt_optimizer: params.promptOptimizer,
   };
 
-  if (params.aspect_ratio !== undefined) body.aspect_ratio = params.aspect_ratio;
+  if (params.aspectRatio !== undefined) body.aspect_ratio = params.aspectRatio;
   if (params.width !== undefined) body.width = params.width;
   if (params.height !== undefined) body.height = params.height;
   if (params.seed !== undefined) body.seed = params.seed;
-  if (params.subject_reference !== undefined)
-    body.subject_reference = params.subject_reference;
+  if (params.subjectReference !== undefined) {
+    body.subject_reference = params.subjectReference.map((ref) => ({
+      type: ref.type,
+      image_file: ref.imageFile,
+    }));
+  }
 
   return body;
 }
@@ -73,10 +77,10 @@ function parseImageResult(resp: Record<string, unknown>): ImageResult {
 
   return {
     id: String(resp.id),
-    image_urls: (data.image_urls as string[] | undefined) ?? undefined,
-    image_base64: (data.image_base64 as string[] | undefined) ?? undefined,
-    success_count: Number(metadata.success_count ?? 0),
-    failed_count: Number(metadata.failed_count ?? 0),
+    imageUrls: (data.image_urls as string[] | undefined) ?? undefined,
+    imageBase64: (data.image_base64 as string[] | undefined) ?? undefined,
+    successCount: Number(metadata.success_count ?? 0),
+    failedCount: Number(metadata.failed_count ?? 0),
   };
 }
 
@@ -106,7 +110,7 @@ export class Image extends APIResource {
    * @param opts.promptOptimizer - Whether to let the API optimise the prompt.
    * @param opts.subjectReference - A list of subject-reference objects for
    *   I2I mode. Each should contain "type" (e.g. "character") and
-   *   "image_file" (a public URL or base64 data URL).
+   *   "imageFile" (a public URL or base64 data URL).
    * @returns An {@link ImageResult} containing generated image URLs or
    *   base64 data, plus success/failure counts.
    */
@@ -127,14 +131,14 @@ export class Image extends APIResource {
     const body = buildImageBody({
       prompt,
       model,
-      aspect_ratio: opts.aspectRatio,
+      aspectRatio: opts.aspectRatio,
       width: opts.width,
       height: opts.height,
-      response_format: opts.responseFormat ?? "url",
+      responseFormat: opts.responseFormat ?? "url",
       seed: opts.seed,
       n: opts.n ?? 1,
-      prompt_optimizer: opts.promptOptimizer ?? false,
-      subject_reference: opts.subjectReference,
+      promptOptimizer: opts.promptOptimizer ?? false,
+      subjectReference: opts.subjectReference,
     });
 
     const resp = await this._client.request("POST", "/v1/image_generation", {

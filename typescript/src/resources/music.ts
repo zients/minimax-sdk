@@ -16,7 +16,7 @@ import { parseNativeSSEAudioChunks } from "../streaming.js";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface MusicAudioSetting {
-  sample_rate?: number;
+  sampleRate?: number;
   bitrate?: number;
   format?: string;
 }
@@ -25,19 +25,19 @@ export interface MusicGenerateParams {
   model?: string;
   prompt?: string;
   lyrics?: string;
-  output_format?: string;
-  lyrics_optimizer?: boolean;
-  is_instrumental?: boolean;
-  audio_setting?: MusicAudioSetting;
+  outputFormat?: string;
+  lyricsOptimizer?: boolean;
+  isInstrumental?: boolean;
+  audioSetting?: MusicAudioSetting;
 }
 
 export interface MusicGenerateStreamParams {
   model?: string;
   prompt?: string;
   lyrics?: string;
-  lyrics_optimizer?: boolean;
-  is_instrumental?: boolean;
-  audio_setting?: MusicAudioSetting;
+  lyricsOptimizer?: boolean;
+  isInstrumental?: boolean;
+  audioSetting?: MusicAudioSetting;
 }
 
 export interface LyricsGenerateParams {
@@ -48,8 +48,8 @@ export interface LyricsGenerateParams {
 }
 
 export interface LyricsResult {
-  song_title: string;
-  style_tags: string;
+  songTitle: string;
+  styleTags: string;
   lyrics: string;
 }
 
@@ -60,22 +60,28 @@ function buildMusicBody(opts: {
   prompt?: string;
   lyrics?: string;
   stream: boolean;
-  output_format?: string;
-  lyrics_optimizer: boolean;
-  is_instrumental: boolean;
-  audio_setting?: MusicAudioSetting;
+  outputFormat?: string;
+  lyricsOptimizer: boolean;
+  isInstrumental: boolean;
+  audioSetting?: MusicAudioSetting;
 }): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: opts.model,
     stream: opts.stream,
-    lyrics_optimizer: opts.lyrics_optimizer,
-    is_instrumental: opts.is_instrumental,
+    lyrics_optimizer: opts.lyricsOptimizer,
+    is_instrumental: opts.isInstrumental,
   };
 
   if (opts.prompt !== undefined) body.prompt = opts.prompt;
   if (opts.lyrics !== undefined) body.lyrics = opts.lyrics;
-  if (opts.output_format !== undefined) body.output_format = opts.output_format;
-  if (opts.audio_setting !== undefined) body.audio_setting = opts.audio_setting;
+  if (opts.outputFormat !== undefined) body.output_format = opts.outputFormat;
+  if (opts.audioSetting) {
+    body.audio_setting = {
+      sample_rate: opts.audioSetting.sampleRate,
+      bitrate: opts.audioSetting.bitrate,
+      format: opts.audioSetting.format,
+    };
+  }
 
   return body;
 }
@@ -131,8 +137,8 @@ function parseLyricsResult(resp: Record<string, unknown>): LyricsResult {
   const data = (resp.data ?? resp) as Record<string, unknown>;
 
   return {
-    song_title: String(data.song_title ?? ""),
-    style_tags: String(data.style_tags ?? ""),
+    songTitle: String(data.song_title ?? ""),
+    styleTags: String(data.style_tags ?? ""),
     lyrics: String(data.lyrics ?? ""),
   };
 }
@@ -173,10 +179,10 @@ export class Music extends APIResource {
       prompt: opts.prompt,
       lyrics: opts.lyrics,
       stream: false,
-      output_format: opts.outputFormat ?? "url",
-      lyrics_optimizer: opts.lyricsOptimizer ?? false,
-      is_instrumental: opts.isInstrumental ?? false,
-      audio_setting: opts.audioSetting,
+      outputFormat: opts.outputFormat ?? "url",
+      lyricsOptimizer: opts.lyricsOptimizer ?? false,
+      isInstrumental: opts.isInstrumental ?? false,
+      audioSetting: opts.audioSetting,
     });
 
     const resp = await this._client.request("POST", "/v1/music_generation", {
@@ -215,10 +221,10 @@ export class Music extends APIResource {
       prompt: opts.prompt,
       lyrics: opts.lyrics,
       stream: true,
-      output_format: "hex",
-      lyrics_optimizer: opts.lyricsOptimizer ?? false,
-      is_instrumental: opts.isInstrumental ?? false,
-      audio_setting: opts.audioSetting,
+      outputFormat: "hex",
+      lyricsOptimizer: opts.lyricsOptimizer ?? false,
+      isInstrumental: opts.isInstrumental ?? false,
+      audioSetting: opts.audioSetting,
     });
 
     const stream = await this._client.streamRequest(

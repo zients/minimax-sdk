@@ -19,15 +19,15 @@ describe("Image generate()", () => {
       { n: 1, responseFormat: "url" },
     );
 
-    console.log(`\n  id=${result.id}  success=${result.success_count}  failed=${result.failed_count}`);
-    if (result.image_urls) {
-      console.log(`  url=${result.image_urls[0]?.slice(0, 80)}...`);
+    console.log(`\n  id=${result.id}  success=${result.successCount}  failed=${result.failedCount}`);
+    if (result.imageUrls) {
+      console.log(`  url=${result.imageUrls[0]?.slice(0, 80)}...`);
     }
 
-    expect(result.image_urls).not.toBeNull();
-    expect(result.image_urls!.length).toBe(1);
-    expect(result.image_urls![0]).toMatch(/^https?:/);
-    expect(result.success_count).toBeGreaterThanOrEqual(1);
+    expect(result.imageUrls).not.toBeNull();
+    expect(result.imageUrls!.length).toBe(1);
+    expect(result.imageUrls![0]).toMatch(/^https?:/);
+    expect(result.successCount).toBeGreaterThanOrEqual(1);
   });
 
   it("generates multiple images", async () => {
@@ -37,11 +37,11 @@ describe("Image generate()", () => {
       { n: 2 },
     );
 
-    console.log(`\n  success=${result.success_count}  urls=${result.image_urls?.length}`);
+    console.log(`\n  success=${result.successCount}  urls=${result.imageUrls?.length}`);
 
-    expect(result.image_urls).not.toBeNull();
-    expect(result.image_urls!.length).toBe(2);
-    expect(result.success_count).toBe(2);
+    expect(result.imageUrls).not.toBeNull();
+    expect(result.imageUrls!.length).toBe(2);
+    expect(result.successCount).toBe(2);
   });
 
   it("generates with aspect ratio", async () => {
@@ -51,10 +51,10 @@ describe("Image generate()", () => {
       { aspectRatio: "16:9", n: 1 },
     );
 
-    console.log(`\n  aspect_ratio=16:9  success=${result.success_count}`);
+    console.log(`\n  aspect_ratio=16:9  success=${result.successCount}`);
 
-    expect(result.image_urls).not.toBeNull();
-    expect(result.success_count).toBeGreaterThanOrEqual(1);
+    expect(result.imageUrls).not.toBeNull();
+    expect(result.successCount).toBeGreaterThanOrEqual(1);
   });
 
   it("generates with base64 format", async () => {
@@ -64,11 +64,11 @@ describe("Image generate()", () => {
       { n: 1, responseFormat: "base64" },
     );
 
-    console.log(`\n  format=base64  has_data=${!!result.image_base64}`);
+    console.log(`\n  format=base64  has_data=${!!result.imageBase64}`);
 
-    expect(result.image_base64).not.toBeNull();
-    expect(result.image_base64!.length).toBe(1);
-    expect(result.image_base64![0]!.length).toBeGreaterThan(100);
+    expect(result.imageBase64).not.toBeNull();
+    expect(result.imageBase64!.length).toBe(1);
+    expect(result.imageBase64![0]!.length).toBeGreaterThan(100);
   });
 
   it("generates with prompt optimizer", async () => {
@@ -78,8 +78,8 @@ describe("Image generate()", () => {
       { n: 1, promptOptimizer: true },
     );
 
-    console.log(`\n  prompt_optimizer=true  success=${result.success_count}`);
+    console.log(`\n  prompt_optimizer=true  success=${result.successCount}`);
 
-    expect(result.success_count).toBeGreaterThanOrEqual(1);
+    expect(result.successCount).toBeGreaterThanOrEqual(1);
   });
 });

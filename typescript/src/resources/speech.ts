@@ -34,18 +34,18 @@ const WS_T2A_PATH = "/ws/v1/t2a_v2";
 
 // ── Type interfaces ──────────────────────────────────────────────────────────
 
-/** Voice configuration (voice_id, speed, vol, pitch, etc.). */
+/** Voice configuration (voiceId, speed, vol, pitch, etc.). */
 export interface VoiceSetting {
-  voice_id?: string;
+  voiceId?: string;
   speed?: number;
   vol?: number;
   pitch?: number;
   [key: string]: unknown;
 }
 
-/** Audio output configuration (sample_rate, format, etc.). */
+/** Audio output configuration (sampleRate, format, etc.). */
 export interface AudioSetting {
-  sample_rate?: number;
+  sampleRate?: number;
   format?: string;
   bitrate?: number;
   channel?: number;
@@ -64,7 +64,7 @@ export interface PronunciationDict {
 
 /** Timbre blending weight entry for multi-voice synthesis. */
 export interface TimbreWeight {
-  voice_id: string;
+  voiceId: string;
   weight: number;
   [key: string]: unknown;
 }
@@ -123,13 +123,32 @@ export interface AsyncGenerateParams extends AsyncCreateParams {
 
 /** Final result of a completed async task (create + poll + retrieve). */
 export interface TaskResult {
-  task_id: string;
+  taskId: string;
   status: string;
-  file_id: string;
-  download_url: string;
+  fileId: string;
+  downloadUrl: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function convertVoiceSetting(vs: VoiceSetting): Record<string, unknown> {
+  const { voiceId, ...rest } = vs;
+  const out: Record<string, unknown> = { ...rest };
+  if (voiceId !== undefined) out.voice_id = voiceId;
+  return out;
+}
+
+function convertAudioSetting(as_: AudioSetting): Record<string, unknown> {
+  const { sampleRate, ...rest } = as_;
+  const out: Record<string, unknown> = { ...rest };
+  if (sampleRate !== undefined) out.sample_rate = sampleRate;
+  return out;
+}
+
+function convertTimbreWeight(tw: TimbreWeight): Record<string, unknown> {
+  const { voiceId, ...rest } = tw;
+  return { ...rest, voice_id: voiceId };
+}
 
 function buildTTSBody(
   params: TTSParams,
@@ -142,9 +161,9 @@ function buildTTSBody(
     output_format: params.outputFormat ?? "hex",
   };
   if (params.voiceSetting !== undefined)
-    body.voice_setting = params.voiceSetting;
+    body.voice_setting = convertVoiceSetting(params.voiceSetting);
   if (params.audioSetting !== undefined)
-    body.audio_setting = params.audioSetting;
+    body.audio_setting = convertAudioSetting(params.audioSetting);
   if (params.languageBoost !== undefined)
     body.language_boost = params.languageBoost;
   if (params.voiceModify !== undefined)
@@ -152,7 +171,7 @@ function buildTTSBody(
   if (params.pronunciationDict !== undefined)
     body.pronunciation_dict = params.pronunciationDict;
   if (params.timbreWeights !== undefined)
-    body.timbre_weights = params.timbreWeights;
+    body.timbre_weights = params.timbreWeights.map(convertTimbreWeight);
   if (params.subtitleEnable !== undefined)
     body.subtitle_enable = params.subtitleEnable;
   return body;
@@ -163,12 +182,12 @@ function buildAsyncBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: params.model ?? "speech-2.8-hd",
-    voice_setting: params.voiceSetting,
+    voice_setting: convertVoiceSetting(params.voiceSetting),
   };
   if (params.text !== undefined) body.text = params.text;
   if (params.textFileId !== undefined) body.text_file_id = params.textFileId;
   if (params.audioSetting !== undefined)
-    body.audio_setting = params.audioSetting;
+    body.audio_setting = convertAudioSetting(params.audioSetting);
   if (params.languageBoost !== undefined)
     body.language_boost = params.languageBoost;
   if (params.voiceModify !== undefined)
@@ -222,7 +241,7 @@ export class Speech extends APIResource {
    * for await (const chunk of client.speech.ttsStream({
    *   text: "Hello, world!",
    *   model: "speech-2.8-hd",
-   *   voiceSetting: { voice_id: "male-qn-qingse" },
+   *   voiceSetting: { voiceId: "male-qn-qingse" },
    * })) {
    *   outputStream.write(chunk);
    * }
@@ -249,7 +268,7 @@ export class Speech extends APIResource {
    * ```typescript
    * const conn = await client.speech.connect({
    *   model: "speech-2.8-hd",
-   *   voiceSetting: { voice_id: "English_expressive_narrator" },
+   *   voiceSetting: { voiceId: "English_expressive_narrator" },
    * });
    * try {
    *   const audio = await conn.send("Hello!");
@@ -363,13 +382,13 @@ export class Speech extends APIResource {
     // Step 3: Retrieve file info for the download URL
     const fileId = String(pollResult.file_id ?? "");
     const fileInfo: FileInfo = await this._client.files.retrieve(fileId);
-    const downloadUrl = fileInfo.download_url ?? "";
+    const downloadUrl = fileInfo.downloadUrl ?? "";
 
     return {
-      task_id: taskId,
+      taskId: taskId,
       status: String(pollResult.status ?? "Success"),
-      file_id: fileId,
-      download_url: downloadUrl,
+      fileId: fileId,
+      downloadUrl: downloadUrl,
     };
   }
 }
@@ -387,10 +406,10 @@ function buildWSConfig(params: {
 }): Record<string, unknown> {
   const config: Record<string, unknown> = {
     model: params.model,
-    voice_setting: params.voiceSetting,
+    voice_setting: convertVoiceSetting(params.voiceSetting),
   };
   if (params.audioSetting !== undefined)
-    config.audio_setting = params.audioSetting;
+    config.audio_setting = convertAudioSetting(params.audioSetting);
   if (params.languageBoost !== undefined)
     config.language_boost = params.languageBoost;
   if (params.voiceModify !== undefined)
@@ -398,7 +417,7 @@ function buildWSConfig(params: {
   if (params.pronunciationDict !== undefined)
     config.pronunciation_dict = params.pronunciationDict;
   if (params.timbreWeights !== undefined)
-    config.timbre_weights = params.timbreWeights;
+    config.timbre_weights = params.timbreWeights.map(convertTimbreWeight);
   return config;
 }
 

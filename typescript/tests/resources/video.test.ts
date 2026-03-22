@@ -65,14 +65,14 @@ describe("Video", () => {
       await video.create({
         model: "MiniMax-Hailuo-2.3",
         prompt: "A cat playing",
-        prompt_optimizer: true,
-        fast_pretreatment: false,
+        promptOptimizer: true,
+        fastPretreatment: false,
         duration: 10,
         resolution: "1280x720",
-        callback_url: "https://example.com/callback",
-        first_frame_image: "https://example.com/first.jpg",
-        last_frame_image: "https://example.com/last.jpg",
-        subject_reference: [{ type: "character", image: "https://example.com/face.jpg" }],
+        callbackUrl: "https://example.com/callback",
+        firstFrameImage: "https://example.com/first.jpg",
+        lastFrameImage: "https://example.com/last.jpg",
+        subjectReference: [{ type: "character", image: "https://example.com/face.jpg" }],
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
@@ -127,12 +127,12 @@ describe("Video", () => {
       });
       // files.retrieve returns download URL
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_100",
+        fileId: "vfile_100",
         bytes: 5000000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/files/vfile_100",
+        downloadUrl: "https://cdn.minimax.io/files/vfile_100",
       });
     }
 
@@ -145,12 +145,12 @@ describe("Video", () => {
         { pollInterval: 1, pollTimeout: 10 },
       );
 
-      expect(result.task_id).toBe("vtask_100");
+      expect(result.taskId).toBe("vtask_100");
       expect(result.status).toBe("Success");
-      expect(result.file_id).toBe("vfile_100");
-      expect(result.download_url).toBe("https://cdn.minimax.io/files/vfile_100");
-      expect(result.video_width).toBe(1280);
-      expect(result.video_height).toBe(720);
+      expect(result.fileId).toBe("vfile_100");
+      expect(result.downloadUrl).toBe("https://cdn.minimax.io/files/vfile_100");
+      expect(result.videoWidth).toBe(1280);
+      expect(result.videoHeight).toBe(720);
     });
 
     it("uses default model and options", async () => {
@@ -204,12 +204,12 @@ describe("Video", () => {
         video_height: 720,
       });
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_200",
+        fileId: "vfile_200",
         bytes: 1000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/vfile_200",
+        downloadUrl: "https://cdn.minimax.io/vfile_200",
       });
 
       const result = await video.imageToVideo(
@@ -225,7 +225,7 @@ describe("Video", () => {
       const body = mockClient.request.mock.calls[0]![2].json;
       expect(body.first_frame_image).toBe("https://example.com/first-frame.jpg");
       expect(body.prompt).toBe("A gentle animation");
-      expect(result.download_url).toBe("https://cdn.minimax.io/vfile_200");
+      expect(result.downloadUrl).toBe("https://cdn.minimax.io/vfile_200");
     });
   });
 
@@ -242,12 +242,12 @@ describe("Video", () => {
         video_height: 480,
       });
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_300",
+        fileId: "vfile_300",
         bytes: 2000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/vfile_300",
+        downloadUrl: "https://cdn.minimax.io/vfile_300",
       });
 
       await video.framesToVideo(
@@ -277,12 +277,12 @@ describe("Video", () => {
         video_height: 480,
       });
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_301",
+        fileId: "vfile_301",
         bytes: 1000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/vfile_301",
+        downloadUrl: "https://cdn.minimax.io/vfile_301",
       });
 
       await video.framesToVideo("https://example.com/last.jpg", {
@@ -308,12 +308,12 @@ describe("Video", () => {
         video_height: 1080,
       });
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_400",
+        fileId: "vfile_400",
         bytes: 3000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/vfile_400",
+        downloadUrl: "https://cdn.minimax.io/vfile_400",
       });
 
       const refs = [
@@ -331,8 +331,8 @@ describe("Video", () => {
       expect(body.subject_reference).toEqual(refs);
       expect(body.model).toBe("S2V-01");
       expect(body.prompt).toBe("A person walking in a park");
-      expect(result.video_width).toBe(1920);
-      expect(result.video_height).toBe(1080);
+      expect(result.videoWidth).toBe(1920);
+      expect(result.videoHeight).toBe(1080);
     });
 
     it("uses default model S2V-01", async () => {
@@ -345,12 +345,12 @@ describe("Video", () => {
         video_height: 480,
       });
       mockClient.files.retrieve.mockResolvedValueOnce({
-        file_id: "vfile_401",
+        fileId: "vfile_401",
         bytes: 1000,
-        created_at: 1700000000,
+        createdAt: 1700000000,
         filename: "video.mp4",
         purpose: "video_generation",
-        download_url: "https://cdn.minimax.io/vfile_401",
+        downloadUrl: "https://cdn.minimax.io/vfile_401",
       });
 
       await video.subjectToVideo(

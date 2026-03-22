@@ -15,32 +15,32 @@ import type { FileInfo } from "./files.js";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface ClonePrompt {
-  prompt_audio: string;
-  prompt_text: string;
+  promptAudio: string;
+  promptText: string;
 }
 
 export interface VoiceCloneResult {
-  voice_id: string;
-  demo_audio?: string | null;
-  input_sensitive?: unknown;
+  voiceId: string;
+  demoAudio?: string | null;
+  inputSensitive?: unknown;
 }
 
 export interface VoiceDesignResult {
-  voice_id: string;
-  trial_audio?: AudioResponse | null;
+  voiceId: string;
+  trialAudio?: AudioResponse | null;
 }
 
 export interface VoiceInfo {
-  voice_id: string;
-  voice_name?: string;
+  voiceId: string;
+  voiceName?: string;
   description: string[];
-  created_time?: string;
+  createdTime?: string;
 }
 
 export interface VoiceList {
-  system_voice: VoiceInfo[];
-  voice_cloning: VoiceInfo[];
-  voice_generation: VoiceInfo[];
+  systemVoice: VoiceInfo[];
+  voiceCloning: VoiceInfo[];
+  voiceGeneration: VoiceInfo[];
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -65,7 +65,12 @@ function buildCloneBody(opts: {
     need_noise_reduction: opts.need_noise_reduction,
     need_volume_normalization: opts.need_volume_normalization,
   };
-  if (opts.clone_prompt !== undefined) body.clone_prompt = opts.clone_prompt;
+  if (opts.clone_prompt !== undefined) {
+    body.clone_prompt = {
+      prompt_audio: opts.clone_prompt.promptAudio,
+      prompt_text: opts.clone_prompt.promptText,
+    };
+  }
   if (opts.text !== undefined) body.text = opts.text;
   if (opts.model !== undefined) body.model = opts.model;
   if (opts.language_boost !== undefined) body.language_boost = opts.language_boost;
@@ -79,9 +84,9 @@ function parseCloneResult(
   const demoAudioUrl = resp.demo_audio as string | undefined;
 
   return {
-    voice_id: voiceId,
-    demo_audio: demoAudioUrl || null,
-    input_sensitive: resp.input_sensitive ?? null,
+    voiceId,
+    demoAudio: demoAudioUrl || null,
+    inputSensitive: resp.input_sensitive ?? null,
   };
 }
 
@@ -106,8 +111,8 @@ function parseDesignResult(
   }
 
   return {
-    voice_id: String(resp.voice_id),
-    trial_audio: trialAudio,
+    voiceId: String(resp.voice_id),
+    trialAudio: trialAudio,
   };
 }
 
@@ -117,18 +122,18 @@ function parseVoiceList(resp: Record<string, unknown>): VoiceList {
   const voiceGeneration = (resp.voice_generation ?? []) as Record<string, unknown>[];
 
   return {
-    system_voice: systemVoice.map(parseVoiceInfo),
-    voice_cloning: voiceCloning.map(parseVoiceInfo),
-    voice_generation: voiceGeneration.map(parseVoiceInfo),
+    systemVoice: systemVoice.map(parseVoiceInfo),
+    voiceCloning: voiceCloning.map(parseVoiceInfo),
+    voiceGeneration: voiceGeneration.map(parseVoiceInfo),
   };
 }
 
 function parseVoiceInfo(v: Record<string, unknown>): VoiceInfo {
   return {
-    voice_id: String(v.voice_id ?? ""),
-    voice_name: v.voice_name != null ? String(v.voice_name) : undefined,
+    voiceId: String(v.voice_id ?? ""),
+    voiceName: v.voice_name != null ? String(v.voice_name) : undefined,
     description: (v.description as string[]) ?? [],
-    created_time: v.created_time != null ? String(v.created_time) : undefined,
+    createdTime: v.created_time != null ? String(v.created_time) : undefined,
   };
 }
 
@@ -162,7 +167,7 @@ export class Voice extends APIResource {
    * @param fileId - The identifier of the uploaded audio file to clone from.
    * @param voiceId - The desired voice identifier for the cloned voice.
    * @param opts.clonePrompt - Optional prompt audio reference with
-   *   "prompt_audio" (file ID) and "prompt_text" keys.
+   *   "promptAudio" (file ID) and "promptText" keys.
    * @param opts.text - Optional text to generate a demo audio clip with the
    *   cloned voice. Requires model to be set as well.
    * @param opts.model - TTS model to use for generating the demo audio
@@ -173,8 +178,8 @@ export class Voice extends APIResource {
    *   source audio before cloning.
    * @param opts.needVolumeNormalization - Whether to normalize volume of the
    *   source audio before cloning.
-   * @returns A {@link VoiceCloneResult} containing the voice_id and,
-   *   when text/model are provided, a demo_audio URL.
+   * @returns A {@link VoiceCloneResult} containing the voiceId and,
+   *   when text/model are provided, a demoAudio URL.
    */
   async clone(
     fileId: string,
@@ -213,8 +218,8 @@ export class Voice extends APIResource {
    *   can hear the designed voice.
    * @param opts.voiceId - Optional identifier to assign to the designed voice.
    *   If not provided, the API generates one.
-   * @returns A {@link VoiceDesignResult} containing the voice_id and a
-   *   trial_audio {@link AudioResponse}.
+   * @returns A {@link VoiceDesignResult} containing the voiceId and a
+   *   trialAudio {@link AudioResponse}.
    */
   async design(
     prompt: string,

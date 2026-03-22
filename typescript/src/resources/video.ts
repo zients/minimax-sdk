@@ -19,23 +19,23 @@ export interface SubjectReference {
 export interface VideoCreateParams {
   model: string;
   prompt?: string;
-  prompt_optimizer?: boolean;
-  fast_pretreatment?: boolean;
+  promptOptimizer?: boolean;
+  fastPretreatment?: boolean;
   duration?: number;
   resolution?: string;
-  callback_url?: string;
-  first_frame_image?: string;
-  last_frame_image?: string;
-  subject_reference?: SubjectReference[];
+  callbackUrl?: string;
+  firstFrameImage?: string;
+  lastFrameImage?: string;
+  subjectReference?: SubjectReference[];
 }
 
 export interface VideoResult {
-  task_id: string;
+  taskId: string;
   status: string;
-  file_id: string;
-  download_url?: string;
-  video_width: number;
-  video_height: number;
+  fileId: string;
+  downloadUrl?: string;
+  videoWidth: number;
+  videoHeight: number;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -43,33 +43,22 @@ export interface VideoResult {
 const CREATE_PATH = "/v1/video_generation";
 const QUERY_PATH = "/v1/query/video_generation";
 
-function buildRequestBody(opts: {
-  model: string;
-  prompt?: string;
-  prompt_optimizer?: boolean;
-  fast_pretreatment?: boolean;
-  duration?: number;
-  resolution?: string;
-  callback_url?: string;
-  first_frame_image?: string;
-  last_frame_image?: string;
-  subject_reference?: SubjectReference[];
-}): Record<string, unknown> {
-  const body: Record<string, unknown> = { model: opts.model };
-  if (opts.prompt !== undefined) body.prompt = opts.prompt;
-  if (opts.prompt_optimizer !== undefined)
-    body.prompt_optimizer = opts.prompt_optimizer;
-  if (opts.fast_pretreatment !== undefined)
-    body.fast_pretreatment = opts.fast_pretreatment;
-  if (opts.duration !== undefined) body.duration = opts.duration;
-  if (opts.resolution !== undefined) body.resolution = opts.resolution;
-  if (opts.callback_url !== undefined) body.callback_url = opts.callback_url;
-  if (opts.first_frame_image !== undefined)
-    body.first_frame_image = opts.first_frame_image;
-  if (opts.last_frame_image !== undefined)
-    body.last_frame_image = opts.last_frame_image;
-  if (opts.subject_reference !== undefined)
-    body.subject_reference = opts.subject_reference;
+function buildRequestBody(params: VideoCreateParams): Record<string, unknown> {
+  const body: Record<string, unknown> = { model: params.model };
+  if (params.prompt !== undefined) body.prompt = params.prompt;
+  if (params.promptOptimizer !== undefined)
+    body.prompt_optimizer = params.promptOptimizer;
+  if (params.fastPretreatment !== undefined)
+    body.fast_pretreatment = params.fastPretreatment;
+  if (params.duration !== undefined) body.duration = params.duration;
+  if (params.resolution !== undefined) body.resolution = params.resolution;
+  if (params.callbackUrl !== undefined) body.callback_url = params.callbackUrl;
+  if (params.firstFrameImage !== undefined)
+    body.first_frame_image = params.firstFrameImage;
+  if (params.lastFrameImage !== undefined)
+    body.last_frame_image = params.lastFrameImage;
+  if (params.subjectReference !== undefined)
+    body.subject_reference = params.subjectReference;
   return body;
 }
 
@@ -101,7 +90,7 @@ export class Video extends APIResource {
     params: VideoCreateParams,
   ): Promise<Record<string, unknown>> {
     return this._client.request("POST", CREATE_PATH, {
-      json: params as unknown as Record<string, unknown>,
+      json: buildRequestBody(params),
     });
   }
 
@@ -123,16 +112,14 @@ export class Video extends APIResource {
   // ── Private helper ─────────────────────────────────────────────────
 
   private async _generate(
-    body: Record<string, unknown>,
+    params: VideoCreateParams,
     opts: {
       pollInterval?: number;
       pollTimeout?: number;
     } = {},
   ): Promise<VideoResult> {
     // 1. Create the generation task.
-    const createResp = await this.create(
-      body as unknown as VideoCreateParams,
-    );
+    const createResp = await this.create(params);
     const taskId = String(createResp.task_id);
 
     // 2. Poll until the task reaches a terminal state.
@@ -153,12 +140,12 @@ export class Video extends APIResource {
     const fileInfo = await this._client.files.retrieve(fileId);
 
     return {
-      task_id: taskId,
+      taskId: taskId,
       status: String(pollResp.status ?? "Success"),
-      file_id: fileId,
-      download_url: fileInfo.download_url,
-      video_width: Number(pollResp.video_width ?? 0),
-      video_height: Number(pollResp.video_height ?? 0),
+      fileId: fileId,
+      downloadUrl: fileInfo.downloadUrl,
+      videoWidth: Number(pollResp.video_width ?? 0),
+      videoHeight: Number(pollResp.video_height ?? 0),
     };
   }
 
@@ -195,19 +182,21 @@ export class Video extends APIResource {
       pollTimeout?: number;
     } = {},
   ): Promise<VideoResult> {
-    const body = buildRequestBody({
-      model,
-      prompt,
-      prompt_optimizer: opts.promptOptimizer ?? true,
-      fast_pretreatment: opts.fastPretreatment ?? false,
-      duration: opts.duration ?? 6,
-      resolution: opts.resolution,
-      callback_url: opts.callbackUrl,
-    });
-    return this._generate(body, {
-      pollInterval: opts.pollInterval,
-      pollTimeout: opts.pollTimeout,
-    });
+    return this._generate(
+      {
+        model,
+        prompt,
+        promptOptimizer: opts.promptOptimizer ?? true,
+        fastPretreatment: opts.fastPretreatment ?? false,
+        duration: opts.duration ?? 6,
+        resolution: opts.resolution,
+        callbackUrl: opts.callbackUrl,
+      },
+      {
+        pollInterval: opts.pollInterval,
+        pollTimeout: opts.pollTimeout,
+      },
+    );
   }
 
   /**
@@ -243,20 +232,22 @@ export class Video extends APIResource {
       pollTimeout?: number;
     } = {},
   ): Promise<VideoResult> {
-    const body = buildRequestBody({
-      model,
-      prompt: opts.prompt,
-      prompt_optimizer: opts.promptOptimizer ?? true,
-      fast_pretreatment: opts.fastPretreatment ?? false,
-      duration: opts.duration ?? 6,
-      resolution: opts.resolution,
-      callback_url: opts.callbackUrl,
-      first_frame_image: firstFrameImage,
-    });
-    return this._generate(body, {
-      pollInterval: opts.pollInterval,
-      pollTimeout: opts.pollTimeout,
-    });
+    return this._generate(
+      {
+        model,
+        prompt: opts.prompt,
+        promptOptimizer: opts.promptOptimizer ?? true,
+        fastPretreatment: opts.fastPretreatment ?? false,
+        duration: opts.duration ?? 6,
+        resolution: opts.resolution,
+        callbackUrl: opts.callbackUrl,
+        firstFrameImage: firstFrameImage,
+      },
+      {
+        pollInterval: opts.pollInterval,
+        pollTimeout: opts.pollTimeout,
+      },
+    );
   }
 
   /**
@@ -294,21 +285,23 @@ export class Video extends APIResource {
       pollTimeout?: number;
     } = {},
   ): Promise<VideoResult> {
-    const body = buildRequestBody({
-      model: opts.model ?? "MiniMax-Hailuo-02",
-      prompt: opts.prompt,
-      prompt_optimizer: opts.promptOptimizer ?? true,
-      fast_pretreatment: opts.fastPretreatment ?? false,
-      duration: opts.duration ?? 6,
-      resolution: opts.resolution,
-      callback_url: opts.callbackUrl,
-      first_frame_image: opts.firstFrameImage,
-      last_frame_image: lastFrameImage,
-    });
-    return this._generate(body, {
-      pollInterval: opts.pollInterval,
-      pollTimeout: opts.pollTimeout,
-    });
+    return this._generate(
+      {
+        model: opts.model ?? "MiniMax-Hailuo-02",
+        prompt: opts.prompt,
+        promptOptimizer: opts.promptOptimizer ?? true,
+        fastPretreatment: opts.fastPretreatment ?? false,
+        duration: opts.duration ?? 6,
+        resolution: opts.resolution,
+        callbackUrl: opts.callbackUrl,
+        firstFrameImage: opts.firstFrameImage,
+        lastFrameImage: lastFrameImage,
+      },
+      {
+        pollInterval: opts.pollInterval,
+        pollTimeout: opts.pollTimeout,
+      },
+    );
   }
 
   /**
@@ -338,16 +331,18 @@ export class Video extends APIResource {
       pollTimeout?: number;
     } = {},
   ): Promise<VideoResult> {
-    const body = buildRequestBody({
-      model: opts.model ?? "S2V-01",
-      prompt: opts.prompt,
-      prompt_optimizer: opts.promptOptimizer ?? true,
-      callback_url: opts.callbackUrl,
-      subject_reference: subjectReference,
-    });
-    return this._generate(body, {
-      pollInterval: opts.pollInterval,
-      pollTimeout: opts.pollTimeout,
-    });
+    return this._generate(
+      {
+        model: opts.model ?? "S2V-01",
+        prompt: opts.prompt,
+        promptOptimizer: opts.promptOptimizer ?? true,
+        callbackUrl: opts.callbackUrl,
+        subjectReference: subjectReference,
+      },
+      {
+        pollInterval: opts.pollInterval,
+        pollTimeout: opts.pollTimeout,
+      },
+    );
   }
 }

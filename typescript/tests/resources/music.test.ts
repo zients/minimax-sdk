@@ -143,7 +143,7 @@ describe("Music", () => {
       mockClient.request.mockResolvedValue(makeMusicUrlResponse("https://example.com/m.mp3"));
 
       await music.generate("music-2.5+", {
-        audioSetting: { sample_rate: 48000, bitrate: 320, format: "wav" },
+        audioSetting: { sampleRate: 48000, bitrate: 320, format: "wav" },
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
@@ -184,7 +184,7 @@ describe("Music", () => {
         outputFormat: "url",
         lyricsOptimizer: true,
         isInstrumental: false,
-        audioSetting: { sample_rate: 44100, format: "mp3" },
+        audioSetting: { sampleRate: 44100, format: "mp3" },
       });
 
       const body = mockClient.request.mock.calls[0]![2].json;
@@ -256,7 +256,7 @@ describe("Music", () => {
         lyrics: "[Verse]\nBa ba ba",
         lyricsOptimizer: true,
         isInstrumental: false,
-        audioSetting: { sample_rate: 48000 },
+        audioSetting: { sampleRate: 48000 },
       })) {
         chunks.push(chunk);
       }
@@ -299,8 +299,8 @@ describe("Music", () => {
         },
       );
 
-      expect(result.song_title).toBe("Summer Breeze");
-      expect(result.style_tags).toBe("pop, upbeat, summer");
+      expect(result.songTitle).toBe("Summer Breeze");
+      expect(result.styleTags).toBe("pop, upbeat, summer");
       expect(result.lyrics).toContain("[Verse]");
     });
 
@@ -322,7 +322,7 @@ describe("Music", () => {
       expect(body.mode).toBe("edit");
       expect(body.lyrics).toBe("[Verse]\nStars are bright...");
       expect(body.title).toBe("Night Sky");
-      expect(result.song_title).toBe("Night Sky");
+      expect(result.songTitle).toBe("Night Sky");
     });
 
     it("omits optional fields when not provided", async () => {
@@ -355,8 +355,8 @@ describe("Music", () => {
         prompt: "Rock song",
       });
 
-      expect(result.song_title).toBe("Direct Song");
-      expect(result.style_tags).toBe("rock");
+      expect(result.songTitle).toBe("Direct Song");
+      expect(result.styleTags).toBe("rock");
       expect(result.lyrics).toBe("[Verse]\nRock on");
     });
   });
