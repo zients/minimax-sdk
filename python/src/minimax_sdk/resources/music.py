@@ -160,8 +160,8 @@ class Music(SyncResource):
             model: The model identifier (default ``"music-2.5+"``).
             prompt: A text description of the desired music style/mood.
             lyrics: Lyrics for the generated track.
-            output_format: ``"url"`` (default) returns a download URL;
-                ``"hex"`` returns hex-encoded audio data.
+            output_format: ``"hex"`` (default) returns hex-encoded audio data;
+                ``"url"`` returns a download URL.
             lyrics_optimizer: Whether to let the API optimise the lyrics.
             is_instrumental: Generate an instrumental track (no vocals).
             audio_setting: Optional dict with keys like ``"sample_rate"``,
@@ -287,8 +287,8 @@ class AsyncMusic(AsyncResource):
             model: The model identifier (default ``"music-2.5+"``).
             prompt: A text description of the desired music style/mood.
             lyrics: Lyrics for the generated track.
-            output_format: ``"url"`` (default) returns a download URL;
-                ``"hex"`` returns hex-encoded audio data.
+            output_format: ``"hex"`` (default) returns hex-encoded audio data;
+                ``"url"`` returns a download URL.
             lyrics_optimizer: Whether to let the API optimise the lyrics.
             is_instrumental: Generate an instrumental track (no vocals).
             audio_setting: Optional dict with keys like ``"sample_rate"``,

@@ -150,8 +150,8 @@ export class Music extends APIResource {
    * @param model - The model identifier (default "music-2.5+").
    * @param opts.prompt - A text description of the desired music style/mood.
    * @param opts.lyrics - Lyrics for the generated track.
-   * @param opts.outputFormat - "url" (default) returns a download URL;
-   *   "hex" returns hex-encoded audio data.
+   * @param opts.outputFormat - "hex" (default) returns hex-encoded audio data;
+   *   "url" returns a download URL.
    * @param opts.lyricsOptimizer - Whether to let the API optimise the lyrics.
    * @param opts.isInstrumental - Generate an instrumental track (no vocals).
    * @param opts.audioSetting - Optional dict with keys like "sample_rate",
